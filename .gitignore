@@ -88,3 +88,6 @@ ENV/
 # Rope project settings
 .idea/
 data/
+.code/
+.DS_Store
+

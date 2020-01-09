@@ -2,7 +2,8 @@ import pysam
 
 
 class DataBase:
-    def __init__(self, path):
+    def __init__(self, path, name=''):
+        self._name = name
         self._path = path
         self._tbx = pysam.Tabixfile(path)
 
