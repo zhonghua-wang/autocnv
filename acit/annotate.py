@@ -31,7 +31,7 @@ class AnnotateHelper:
                 # loss['2A'] = max(loss['2A'], 1)
                 loss['2A'] = True
             # 不位于基因内部
-            if overlap < 1:
+            elif overlap < 1:
                 # 覆盖末位外显子
                 if any(
                         exon.last_exon == 'True'
