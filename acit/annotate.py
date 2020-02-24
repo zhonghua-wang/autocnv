@@ -28,7 +28,8 @@ class AnnotateHelper:
         for gene, overlap, coverage in annotation['overlap_hi_genes']:
             # 覆盖整个基因
             if coverage == 1:
-                loss['2A'] = max(loss['2A'], 1)
+                # loss['2A'] = max(loss['2A'], 1)
+                loss['2A'] = True
             # 不位于基因内部
             if overlap < 1:
                 # 覆盖末位外显子
@@ -38,48 +39,59 @@ class AnnotateHelper:
                 ):
                     # 覆盖超过两个外显子
                     if len(annotation['overlap_hi_exons'][gene.gene_id]) > 1:
-                        loss['2D-4'] = max((loss['2D-4'], 0.9))
+                        # loss['2D-4'] = max((loss['2D-4'], 0.9))
+                        loss['2D-4'] = True
                     # 仅覆盖末位外显子
                     elif len(annotation['variants']) > 0:
-                        loss['2D-2'] = max((loss['2D-2'], 0.9))
+                        # loss['2D-2'] = max((loss['2D-2'], 0.9))
+                        loss['2D-2'] = True
                     else:
-                        loss['2D-3'] = max((loss['2D-3'], 0.3))
+                        # loss['2D-3'] = max((loss['2D-3'], 0.3))
+                        loss['2D-3'] = True
                 # 覆盖5'端CDS区
                 elif gene.gene_id in annotation['overlap_hi_cds'] and \
                         len(annotation['overlap_hi_cds'][gene.gene_id]) > 0:
-                    loss['2C-1'] = max((loss['2C-1'], 0.9))
+                    # loss['2C-1'] = max((loss['2C-1'], 0.9))
+                    loss['2C-1'] = True
 
         # 完全覆盖hi区域
         for region, overlap, coverage in annotation['overlap_hi_regions']:
             if coverage == 1:
-                loss['2A'] = max((loss['2A'], 1))
+                # loss['2A'] = max((loss['2A'], 1))
+                loss['2A'] = True
 
         # 落入uhi基因
         for gene, overlap, coverage in annotation['overlap_uhi_genes']:
             if overlap == 1:
-                loss['2F'] = -1
+                # loss['2F'] = -1
+                loss['2F'] = True
 
         # 落入uhi区域
         for region, overlap, coverage in annotation['overlap_uhi_regions']:
             genes = set(gene.symbol for gene, *_ in annotation['overlap_genes'])
             if overlap == 1:  # 完全落入区域
-                loss['2F'] = -1
+                # loss['2F'] = -1
+                loss['2F'] = True
             elif set(region.genes.split(',')) == genes:  # 覆盖相同的基因
-                loss['2F'] = -1
+                # loss['2F'] = -1
+                loss['2F'] = True
 
         # 包含decipher基因
         if '2F' not in loss and len(annotation['overlap_decipher_genes']) > 0:
-            loss['2H'] = 0.15
+            # loss['2H'] = 0.15
+            loss['2H'] = True
 
         # 覆盖基因个数
         gene_count = len(annotation['overlap_genes'])
         if gene_count >= 25:
             if gene_count < 35:
-                loss['3B'] = 0.45
+                # loss['3B'] = 0.45
+                loss['3B'] = True
             else:
-                loss['3C'] = 0.9
+                # loss['3C'] = 0.9
+                loss['3C'] = True
 
-        annotation.update(loss)
+        annotation['rules'] = loss
         return annotation
 
     @staticmethod
@@ -89,25 +101,30 @@ class AnnotateHelper:
         for gene, overlap, coverage in annotation['overlap_ts_genes']:
             # 覆盖整个基因
             if coverage == 1:
-                gain['2A'] = max(gain['2A'], 1)
+                # gain['2A'] = max(gain['2A'], 1)
+                gain['2A'] = True
 
         # 完全覆盖ts区域
         for region, overlap, coverage in annotation['overlap_ts_regions']:
             if coverage == 1:
-                gain['2A'] = max((gain['2A'], 1))
+                # gain['2A'] = max((gain['2A'], 1))
+                gain['2A'] = True
 
         # 落入uts基因
         for gene, overlap, coverage in annotation['overlap_uts_genes']:
             if overlap == 1:
-                gain['2D'] = -1
+                # gain['2D'] = -1
+                gain['2D'] = True
 
         # 落入uts区域
         for region, overlap, coverage in annotation['overlap_uts_regions']:
             genes = set(gene.symbol for gene, *_ in annotation['overlap_genes'])
             if overlap == 1:  # 完全落入区域
-                gain['2D'] = -1
+                # gain['2D'] = -1
+                gain['2D'] = True
             elif set(region.genes.split(',')) == genes:  # 覆盖相同的基因
-                gain['2F'] = -1
+                # gain['2F'] = -1
+                gain['2F'] = True
 
         # todo: 2.2.4
 
@@ -115,11 +132,13 @@ class AnnotateHelper:
         gene_count = len(annotation['overlap_genes'])
         if gene_count >= 35:
             if gene_count < 50:
-                gain['3B'] = 0.45
+                # gain['3B'] = 0.45
+                gain['3B'] = True
             else:
-                gain['3C'] = 0.9
+                # gain['3C'] = 0.9
+                gain['3C'] = True
 
-        annotation.update(gain)
+        annotation['rules'] = gain
         return annotation
 
     def annotate(self, chromosome, start, end, func, error=0):
