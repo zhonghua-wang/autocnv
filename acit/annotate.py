@@ -24,7 +24,7 @@ class AnnotateHelper:
 
     @staticmethod
     def _annotate_loss(**annotation):
-        loss = defaultdict(float)
+        loss = dict()
 
         if len(annotation['overlap_genes']) + len(annotation['overlap_hi_regions']) > 0:
             loss['1A'] = True
@@ -110,7 +110,7 @@ class AnnotateHelper:
 
     @staticmethod
     def _annotate_gain(**annotation):
-        gain = defaultdict(float)
+        gain = dict()
 
         if len(annotation['overlap_genes']) + len(annotation['overlap_ts_regions']) > 0:
             gain['1A'] = True
