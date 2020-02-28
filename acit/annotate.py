@@ -21,6 +21,7 @@ class AnnotateHelper:
         self._ts_region_database = DataBase(settings.TS_REGION_DATABASE)
         self._uts_gene_database = DataBase(settings.UTS_GENE_DATABASE)
         self._uts_region_database = DataBase(settings.UTS_REGION_DATABASE)
+        self._dgv_database = DataBase(settings.DGV_DATABASE)
 
     @staticmethod
     def _annotate_loss(**annotation):
@@ -105,6 +106,10 @@ class AnnotateHelper:
         elif gene_count >= 0:
             loss['3A'] = True
 
+        # DGV金标
+        if len(annotation['dgv_records']) > 0:
+            loss['4O'] = True
+
         annotation['rules'] = loss
         return annotation
 
@@ -165,6 +170,10 @@ class AnnotateHelper:
             gain['3B'] = True
         elif gene_count >= 0:
             gain['3A'] = True
+
+        # DGV金标
+        if len(annotation['dgv_records']) > 0:
+            gain['4O'] = True
 
         annotation['rules'] = gain
         return annotation
@@ -251,6 +260,10 @@ class AnnotateHelper:
 
         annotation['overlap_uts_regions'] = list(self._uts_region_database.overlap(
             chromosome, annotation['inner_start'], annotation['inner_end']
+        ))
+
+        annotation['dgv_records'] = list(self._dgv_database.overlap(
+            chromosome, annotation['outer_start'], annotation['outer_end']
         ))
 
         if func == 'del':
