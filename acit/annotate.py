@@ -45,9 +45,7 @@ class AnnotateHelper:
                     if len(annotation['overlap_hi_exons'][gene.gene_id]) >= 2:
                         # 覆盖超过两个外显子
                         loss['2D-4'] = True
-                    # 仅覆盖末位外显子
                     elif gene.gene_id in annotation['overlap_hi_cds'] \
-                            and gene.gene_id in annotation['overlap_hi_cds'] \
                             and len(annotation['overlap_hi_cds'][gene.gene_id]) > 0:  # 是否覆盖CDS
                         if len(annotation['variants']) > 0:  # 末位外显子是否有致病变异
                             loss['2D-2'] = True
@@ -57,8 +55,8 @@ class AnnotateHelper:
                         # 不覆盖CDS区
                         loss['2D-1'] = True
                 # 未覆盖末位外显子
-                elif gene.gene_id in annotation['overlap_hi_cds'] and \
-                        len(annotation['overlap_hi_cds'][gene.gene_id]) > 0:  # 是否覆盖5'端CDS
+                elif gene.gene_id in annotation['overlap_hi_cds'] \
+                        and len(annotation['overlap_hi_cds'][gene.gene_id]) > 0:  # 是否覆盖5'端CDS
                     loss['2C-1'] = True
                 else:
                     loss['2C-2'] = True
@@ -242,7 +240,8 @@ class AnnotateHelper:
 
         try:
             annotation['variants'] = list(self._clinvar_pathogenic_database.fetch(
-            chromosome, annotation['inner_start'], annotation['inner_end']))
+                chromosome, annotation['inner_start'], annotation['inner_end'])
+            )
         except ValueError:
             annotation['variants'] = []
 
