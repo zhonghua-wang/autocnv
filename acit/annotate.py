@@ -155,11 +155,15 @@ class AnnotateHelper:
         for region, overlap, coverage in annotation['overlap_uts_regions']:
             genes = set(gene.symbol for gene, *_ in annotation['overlap_genes'])
             region_genes = set(region.genes.split(','))
-            if overlap == 1:  # 完全落入区域
-                gain['2D'] = True
-            elif region_genes == genes:  # 覆盖相同的基因
-                gain['2F'] = True
-            # TODO: 多少
+            if len(genes - region_genes) > 0:  # 多
+                gain['2G'] = True
+            elif len(region_genes - genes) > 0:  # 少
+                if any(coverage != 1 for *_, coverage in annotation['overlap_genes']):
+                    gain['2E'] = True
+                else:
+                    gain['2D'] = True
+            else:
+                gain['2C'] = True
 
         for gene, overlap, coverage in annotation['overlap_hi_genes']:
             if coverage == 1:
