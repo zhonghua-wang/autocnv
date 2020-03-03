@@ -239,9 +239,11 @@ class AnnotateHelper:
             lambda record: record[0].gene_id
         )
 
-        annotation['variants'] = list(self._clinvar_pathogenic_database.fetch(
-            chromosome, annotation['inner_start'], annotation['inner_end']
-        ))
+        try:
+            annotation['variants'] = list(self._clinvar_pathogenic_database.fetch(
+            chromosome, annotation['inner_start'], annotation['inner_end']))
+        except ValueError:
+            annotation['variants'] = []
 
         annotation['overlap_hi_regions'] = list(self._hi_region_database.overlap(
             chromosome, annotation['inner_start'], annotation['inner_end']
@@ -287,3 +289,6 @@ class AnnotateHelper:
             raise ValueError('Unknown func `{}`'.format(func))
 
         return annotation
+
+anno = AnnotateHelper()
+annotation = anno.annotate('chr12', 114737220, 114900761, 'del')
