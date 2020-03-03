@@ -1,8 +1,9 @@
-from collections import defaultdict
 from acit.database import DataBase
 from pysam import VariantFile
 from acit import settings
-import re
+from autopvs1.cnv import CNVRecord, PVS1CNV
+from autopvs1.utils import get_transcript
+from autopvs1.read_data import transcripts
 
 
 class AnnotateHelper:
@@ -62,8 +63,14 @@ class AnnotateHelper:
                     loss['2C-2'] = True
             # 位于基因内部
             else:
-                # todo: add autoPVS1 here
-                pass
+                cnv = CNVRecord(
+                    annotation['chromosome'], annotation['outer_start'],
+                    annotation['outer_end'], annotation['func']
+                )
+                tx = get_transcript(gene.transcript, transcripts)
+                pvs1 = PVS1CNV(cnv, None, tx)
+                loss['2E'] = True
+                annotation['autoPVS1'] = pvs1.verify_DEL()
 
         # 完全覆盖hi区域
         for region, overlap, coverage in annotation['overlap_hi_regions']:
@@ -159,8 +166,14 @@ class AnnotateHelper:
             if coverage == 1:
                 gain['2H'] = True
             elif overlap == 1:
-                # add autoPVS1 here
-                pass
+                cnv = CNVRecord(
+                    annotation['chromosome'], annotation['outer_start'],
+                    annotation['outer_end'], annotation['func']
+                )
+                tx = get_transcript(gene.transcript, transcripts)
+                pvs1 = PVS1CNV(cnv, None, tx)
+                gain['2I'] = True
+                annotation['autoPVS1'] = pvs1.verify_DUP()
 
         # 覆盖基因个数
         gene_count = len(annotation['overlap_genes'])

@@ -42,7 +42,6 @@ def test_annotation6():
 def test_annotation7():
     # 包含TBX5中间3个exon
     annotation = annotate.annotate('chr12', 114800000, 114835000, 'del')
-    # todo: autoPVS1
     assert annotation['rules']['2E']
 
 
@@ -83,6 +82,5 @@ def test_annotation12():
 
 def test_annotation13():
     # MECP2基因内CNV
-    annotation = annotate.annotate('chrX', 153287263, 153363188, 'dup')
-    # todo: autoPVS1
+    annotation = annotate.annotate('chrX', 153300000, 153363188, 'dup')
     assert annotation['rules']['2I']
