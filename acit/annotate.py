@@ -289,6 +289,3 @@ class AnnotateHelper:
             raise ValueError('Unknown func `{}`'.format(func))
 
         return annotation
-
-anno = AnnotateHelper()
-annotation = anno.annotate('chr12', 114737220, 114900761, 'del')
