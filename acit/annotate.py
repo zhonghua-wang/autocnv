@@ -46,8 +46,9 @@ class AnnotateHelper:
                         # 覆盖超过两个外显子
                         loss['2D-4'] = True
                     # 仅覆盖末位外显子
-                    elif gene.gene_id in annotation['overlap_hi_cds'] and \
-                            len(annotation['overlap_hi_cds'][gene.gene_id]) > 0:  # 是否覆盖CDS区
+                    elif gene.gene_id in annotation['overlap_hi_cds'] \
+                            and gene.gene_id in annotation['overlap_hi_cds'] \
+                            and len(annotation['overlap_hi_cds'][gene.gene_id]) > 0:  # 是否覆盖CDS
                         if len(annotation['variants']) > 0:  # 末位外显子是否有致病变异
                             loss['2D-2'] = True
                         else:
@@ -57,7 +58,7 @@ class AnnotateHelper:
                         loss['2D-1'] = True
                 # 未覆盖末位外显子
                 elif gene.gene_id in annotation['overlap_hi_cds'] and \
-                        len(annotation['overlap_hi_cds'][gene.gene_id]) > 0:  # 是否覆盖5'端CDS区
+                        len(annotation['overlap_hi_cds'][gene.gene_id]) > 0:  # 是否覆盖5'端CDS
                     loss['2C-1'] = True
                 else:
                     loss['2C-2'] = True
