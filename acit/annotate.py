@@ -113,8 +113,10 @@ class AnnotateHelper:
             loss['3A'] = True
 
         # DGV金标
-        if len(annotation['dgv_records']) > 0:
-            loss['4O'] = True
+        genes = set(gene.symbol for gene, *_ in annotation['overlap_genes'])
+        for record, *_ in annotation['dgv_records']:
+            if genes - set(record.genes.split(',')):
+                loss['4O'] = True
 
         annotation['rules'] = loss
         return annotation
@@ -188,8 +190,10 @@ class AnnotateHelper:
             gain['3A'] = True
 
         # DGV金标
-        if len(annotation['dgv_records']) > 0:
-            gain['4O'] = True
+        genes = set(gene.symbol for gene, *_ in annotation['overlap_genes'])
+        for record, *_ in annotation['dgv_records']:
+            if genes - set(record.genes.split(',')):
+                gain['4O'] = True
 
         annotation['rules'] = gain
         return annotation
