@@ -4,6 +4,13 @@ from acit import settings
 from autopvs1.cnv import CNVRecord, PVS1CNV
 from autopvs1.utils import get_transcript
 from autopvs1.read_data import transcripts
+from autopvs1.strength import Strength
+
+
+PVS1 = {
+    Strength.VeryStrong: 'PVS1', Strength.Strong: 'PVS1_S', Strength.Moderate: 'PVS1_M',
+    Strength.Supporting: 'PVS1_P', Strength.Unmet: 'PVS1_U'
+}
 
 
 class AnnotateHelper:
@@ -69,7 +76,7 @@ class AnnotateHelper:
                 tx = get_transcript(gene.transcript, transcripts)
                 pvs1 = PVS1CNV(cnv, None, tx)
                 loss['2E'] = True
-                annotation['autoPVS1'] = pvs1.verify_DEL()
+                loss[PVS1[pvs1.verify_DEL()[0]]] = True
 
         # 完全覆盖hi区域
         for region, overlap, coverage in annotation['overlap_hi_regions']:
@@ -178,7 +185,7 @@ class AnnotateHelper:
                 tx = get_transcript(gene.transcript, transcripts)
                 pvs1 = PVS1CNV(cnv, None, tx)
                 gain['2I'] = True
-                annotation['autoPVS1'] = pvs1.verify_DUP()
+                gain[PVS1[pvs1.verify_DUP()[0]]] = True
 
         # 覆盖基因个数
         gene_count = len(annotation['overlap_genes'])
@@ -197,6 +204,10 @@ class AnnotateHelper:
 
         annotation['rules'] = gain
         return annotation
+
+    @staticmethod
+    def judge(**rules):
+        return sum(settings.DEFAULT_SCORE[rule] for rule, check in rules.items() if check)
 
     def annotate(self, chromosome, start, end, func, error=0):
         annotation = dict(
@@ -295,5 +306,7 @@ class AnnotateHelper:
             annotation = self._annotate_gain(**annotation)
         else:
             raise ValueError('Unknown func `{}`'.format(func))
+
+        annotation['score'] = self.judge(**annotation['rules'])
 
         return annotation
