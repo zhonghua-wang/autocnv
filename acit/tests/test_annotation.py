@@ -50,6 +50,7 @@ def test_annotation8():
     annotation = annotate.annotate('chr12', 114842000, 115111000, 'del')
     assert annotation['rules']['2C-2']
     assert annotation['rules']['2D-2']
+    assert '4O' not in annotation['rules'] or annotation['rules']['4O'] is False
 
 
 def test_annotation9():
