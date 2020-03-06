@@ -206,8 +206,8 @@ class AnnotateHelper:
         return annotation
 
     @staticmethod
-    def judge(**rules):
-        return sum(settings.DEFAULT_SCORE[rule] for rule, check in rules.items() if check)
+    def judge(cnv_type, **rules):
+        return dict([(rule, settings.DEFAULT_SCORE[cnv_type][rule]) for rule, check in rules.items() if check])
 
     def annotate(self, chromosome, start, end, func, error=0):
         annotation = dict(
@@ -307,6 +307,7 @@ class AnnotateHelper:
         else:
             raise ValueError('Unknown func `{}`'.format(func))
 
-        annotation['score'] = self.judge(**annotation['rules'])
+        annotation['rules'] = self.judge(func, **annotation['rules'])
+        annotation['score'] = sum(annotation['rules'].values())
 
         return annotation
