@@ -5,6 +5,7 @@ from autopvs1.cnv import CNVRecord, PVS1CNV
 from autopvs1.utils import get_transcript
 from autopvs1.read_data import transcripts
 from autopvs1.strength import Strength
+import operator
 
 
 PVS1 = {
@@ -206,8 +207,22 @@ class AnnotateHelper:
         return annotation
 
     @staticmethod
-    def judge(cnv_type, **rules):
-        return dict([(rule, settings.DEFAULT_SCORE[cnv_type][rule]) for rule, check in rules.items() if check])
+    def judge(func, **rules):
+        rules = {
+            rule: settings.DEFAULT_SCORE[func][rule] for rule, check in rules.items() if check
+        }
+        score = sum(rules.values())
+        levels = (
+            (operator.ge, 1, 'P'), (operator.ge, 0.9, 'LP'), (operator.gt, -0.9, 'VUS'),
+            (operator.gt, -1, 'LB'), (operator.le, -1, 'B')
+        )
+        for op, cutoff, level in levels[:-1]:
+            if op(score, cutoff):
+                pathogenicity = level
+                break
+        else:
+            pathogenicity = levels[-1][2]
+        return rules, score, pathogenicity
 
     def annotate(self, chromosome, start, end, func, error=0):
         annotation = dict(
@@ -307,7 +322,8 @@ class AnnotateHelper:
         else:
             raise ValueError('Unknown func `{}`'.format(func))
 
-        annotation['rules'] = self.judge(func, **annotation['rules'])
-        annotation['score'] = sum(annotation['rules'].values())
+        annotation['rules'], annotation['score'], annotation['pathogenicity'] = self.judge(
+            func, **annotation['rules']
+        )
 
         return annotation
