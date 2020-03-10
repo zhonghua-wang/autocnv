@@ -142,8 +142,6 @@ class AnnotateHelper:
             # 覆盖整个基因
             if coverage == 1:
                 gain['2A'] = True
-            else:
-                gain['2B'] = True
 
         # 完全覆盖ts区域
         for region, overlap, coverage in annotation['overlap_ts_regions']:
