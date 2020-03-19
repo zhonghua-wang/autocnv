@@ -5,6 +5,7 @@ from autopvs1.cnv import CNVRecord, PVS1CNV
 from autopvs1.utils import get_transcript
 from autopvs1.read_data import transcripts
 from autopvs1.strength import Strength
+from itertools import chain
 import operator
 
 
@@ -30,7 +31,10 @@ class AnnotateHelper:
         self._ts_region_database = DataBase(settings.TS_REGION_DATABASE)
         self._uts_gene_database = DataBase(settings.UTS_GENE_DATABASE)
         self._uts_region_database = DataBase(settings.UTS_REGION_DATABASE)
-        self._dgv_database = DataBase(settings.DGV_DATABASE)
+        self._dgv_gain_database = DataBase(settings.DGV_GAIN_DATABASE)
+        self._dgv_loss_database = DataBase(settings.DGV_LOSS_DATABASE)
+        self._gnomad_del_database = DataBase(settings.GNOMAD_DEL_DATABASE)
+        self._gnomad_dup_database = DataBase(settings.GNOMAD_DUP_DATABASE)
 
     @staticmethod
     def _annotate_loss(**annotation):
@@ -119,7 +123,7 @@ class AnnotateHelper:
 
         # DGV金标
         genes = set(gene.symbol for gene, *_ in annotation['overlap_genes'])
-        for record, *_ in annotation['dgv_records']:
+        for record, *_ in chain(annotation['dgv_loss_records'], annotation['gnomad_del_records']):
             if len(genes - set(record.genes.split(','))) == 0:
                 loss['4O'] = True
 
@@ -195,7 +199,7 @@ class AnnotateHelper:
 
         # DGV金标
         genes = set(gene.symbol for gene, *_ in annotation['overlap_genes'])
-        for record, *_ in annotation['dgv_records']:
+        for record, *_ in chain(annotation['dgv_gain_records'], annotation['gnomad_dup_records']):
             if len(genes - set(record.genes.split(','))) == 0:
                 gain['4O'] = True
 
@@ -307,7 +311,19 @@ class AnnotateHelper:
             chromosome, annotation['inner_start'], annotation['inner_end']
         ))
 
-        annotation['dgv_records'] = list(self._dgv_database.overlap(
+        annotation['dgv_gain_records'] = list(self._dgv_gain_database.overlap(
+            chromosome, annotation['outer_start'], annotation['outer_end']
+        ))
+
+        annotation['dgv_loss_records'] = list(self._dgv_loss_database.overlap(
+            chromosome, annotation['outer_start'], annotation['outer_end']
+        ))
+
+        annotation['gnomad_del_records'] = list(self._gnomad_del_database.overlap(
+            chromosome, annotation['outer_start'], annotation['outer_end']
+        ))
+
+        annotation['gnomad_dup_records'] = list(self._gnomad_dup_database.overlap(
             chromosome, annotation['outer_start'], annotation['outer_end']
         ))
 
