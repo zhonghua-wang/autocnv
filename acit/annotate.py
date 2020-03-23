@@ -5,6 +5,7 @@ from autopvs1.cnv import CNVRecord, PVS1CNV
 from autopvs1.utils import get_transcript
 from autopvs1.read_data import transcripts
 from autopvs1.strength import Strength
+from collections import defaultdict
 from itertools import chain
 import operator
 
@@ -14,11 +15,24 @@ PVS1 = {
     Strength.Supporting: 'PVS1_P', Strength.Unmet: 'PVS1_U'
 }
 
+SCORE_GROUP = {
+    'del': {
+        rule: 'G1' for rule in ('2A', '2B', '2C-1', '2C-2', '2D-1', '2D-2', '2D-3', '2D-4', '2E')
+    },
+    'dup': {}
+}
+
+PATHOGENICITY_LEVELS = [
+    (operator.ge, 1, 'P'), (operator.ge, 0.9, 'LP'), (operator.gt, -0.9, 'VUS'),
+    (operator.gt, -1, 'LB'), (operator.le, -1, 'B')
+]
+
 
 class AnnotateHelper:
     def __init__(self):
         self._gene_database = DataBase(settings.GENE_DATABASE)
         self._omim_gene_database = DataBase(settings.OMIM_GENE_DATABASE)
+        self._func_region_database = DataBase(settings.FUNC_REGION_DATABASE)
         self._hi_gene_database = DataBase(settings.HI_GENE_DATABASE)
         self._hi_exon_database = DataBase(settings.HI_EXON_DATABASE)
         self._hi_cds_database = DataBase(settings.HI_CDS_DATABASE)
@@ -40,7 +54,7 @@ class AnnotateHelper:
     def _annotate_loss(**annotation):
         loss = dict()
 
-        if len(annotation['overlap_genes']) + len(annotation['overlap_hi_regions']) > 0:
+        if len(annotation['overlap_genes']) + len(annotation['overlap_func_regions']) > 0:
             loss['1A'] = True
         else:
             loss['1B'] = True
@@ -134,7 +148,7 @@ class AnnotateHelper:
     def _annotate_gain(**annotation):
         gain = dict()
 
-        if len(annotation['overlap_genes']) + len(annotation['overlap_ts_regions']) > 0:
+        if len(annotation['overlap_genes']) + len(annotation['overlap_func_regions']) > 0:
             gain['1A'] = True
         else:
             gain['1B'] = True
@@ -207,21 +221,28 @@ class AnnotateHelper:
         return annotation
 
     @staticmethod
+    def merge_score(func, **rules):
+        groups = defaultdict(list)
+        for rule, score in rules.items():
+            try:
+                groups[SCORE_GROUP[func][rule]].append(score)
+            except KeyError:
+                yield score
+        for _, scores in groups.items():
+            yield max(scores)
+
+    @staticmethod
     def judge(func, **rules):
         rules = {
             rule: settings.DEFAULT_SCORE[func][rule] for rule, check in rules.items() if check
         }
-        score = sum(rules.values())
-        levels = (
-            (operator.ge, 1, 'P'), (operator.ge, 0.9, 'LP'), (operator.gt, -0.9, 'VUS'),
-            (operator.gt, -1, 'LB'), (operator.le, -1, 'B')
-        )
-        for op, cutoff, level in levels[:-1]:
+        score = sum(AnnotateHelper.merge_score(func, **rules))
+        for op, cutoff, level in PATHOGENICITY_LEVELS[:-1]:
             if op(score, cutoff):
                 pathogenicity = level
                 break
         else:
-            pathogenicity = levels[-1][2]
+            pathogenicity = PATHOGENICITY_LEVELS[-1][2]
         return rules, score, pathogenicity
 
     def annotate(self, chromosome, start, end, func, error=0):
@@ -243,6 +264,10 @@ class AnnotateHelper:
         # )
 
         annotation['overlap_omim_genes'] = list(self._omim_gene_database.overlap(
+            chromosome, annotation['outer_start'], annotation['outer_end']
+        ))
+
+        annotation['overlap_func_regions'] = list(self._func_region_database.overlap(
             chromosome, annotation['outer_start'], annotation['outer_end']
         ))
 
