@@ -28,8 +28,8 @@ SCORE_GROUP = {
 }
 
 PATHOGENICITY_LEVELS = [
-    (operator.ge, 1, 'P'), (operator.ge, 0.9, 'LP'), (operator.gt, -0.9, 'VUS'),
-    (operator.gt, -1, 'LB'), (operator.le, -1, 'B')
+    (operator.ge, 0.99, 'P'), (operator.ge, 0.9, 'LP'), (operator.gt, -0.9, 'VUS'),
+    (operator.gt, -0.99, 'LB'), (operator.le, -0.99, 'B')
 ]
 
 
