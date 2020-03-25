@@ -8,8 +8,11 @@ from autopvs1.strength import Strength
 from collections import defaultdict
 from itertools import chain
 import operator
+import pandas as pd
+from acit.utils import ACITEncoder
+import json
 
-
+SEP = '\n'
 PVS1 = {
     Strength.VeryStrong: 'PVS1', Strength.Strong: 'PVS1_S', Strength.Moderate: 'PVS1_M',
     Strength.Supporting: 'PVS1_P', Strength.Unmet: 'PVS1_U'
@@ -364,3 +367,29 @@ class AnnotateHelper:
         )
 
         return annotation
+
+    def _seri_anno(self, seri: pd.Series) -> pd.Series:
+        anno_result = self.annotate(seri['chr'], seri['start'], seri['end'], seri['type'], seri['error'])
+        seri['omim_gene'] = SEP.join(x[0].symbol for x in anno_result['overlap_omim_genes'])
+        seri['HI_gene'] = SEP.join(f'{x[0].symbol}({x[1]:.2%})' for x in anno_result['overlap_hi_genes'])
+        seri['HI_region'] = SEP.join(f'{x[0].name}({x[1]:.2%})' for x in anno_result['overlap_hi_regions'])
+        seri['TS_gene'] = SEP.join(f'{x[0].symbol}({x[1]:.2%})' for x in anno_result['overlap_ts_genes'])
+        seri['TS_region'] = SEP.join(f'{x[0].name}({x[1]:.2%})' for x in anno_result['overlap_ts_regions'])
+        seri['auto_evidence'] = anno_result['rules']
+        seri['auto_score'] = anno_result['score']
+        seri['auto_pathogenicity'] = anno_result['pathogenicity']
+        return seri
+
+    def annotation_file(self, file_path, result_path):
+        """
+        annotate specified file, required columns: chr, start, end, type, error
+        :param file_path: input file (TSV)
+        :param result_path: result file path (TSV)
+        :return: -
+        """
+        input_df = pd.read_csv(file_path, sep='\t')
+        input_df = input_df.apply(
+            self._seri_anno,
+            axis=1
+        )
+        input_df.to_csv(result_path, sep='\t', index=False)
