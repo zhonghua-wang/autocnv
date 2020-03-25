@@ -13,6 +13,8 @@ from acit.utils import ACITEncoder
 import json
 
 SEP = '\n'
+DEFAULT_EMPTY_VALUE = '-'
+
 PVS1 = {
     Strength.VeryStrong: 'PVS1', Strength.Strong: 'PVS1_S', Strength.Moderate: 'PVS1_M',
     Strength.Supporting: 'PVS1_P', Strength.Unmet: 'PVS1_U'
@@ -376,14 +378,15 @@ class AnnotateHelper:
         seri['TS_gene'] = ','.join(f'{x[0].symbol}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_ts_genes'])
         seri['TS_region'] = ','.join(f'{x[0].name}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_ts_regions'])
         seri['Pred_HI_gene'] = ','.join(f'{x[0].symbol}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_decipher_genes'])
-        seri['auto_evidence'] = anno_result['rules']
+        seri['auto_evidence'] = ','.join(anno_result['rules'].keys())
+        seri['auto_evidence_score'] = anno_result['rules']
         seri['auto_score'] = anno_result['score']
         seri['auto_pathogenicity'] = anno_result['pathogenicity']
         return seri
 
     def _seri_anno(self, seri: pd.Series) -> pd.Series:
         anno_result = self.annotate(seri['chr'], seri['start'], seri['end'], seri['type'], seri['error'])
-        return seri.append(pd.Series(self._serializer(anno_result)))
+        return seri.append(pd.Series(self._serializer(anno_result)).replace('', '-').fillna(DEFAULT_EMPTY_VALUE))
 
     def annotation_file(self, file_path, result_path):
         """
