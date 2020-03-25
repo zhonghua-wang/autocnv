@@ -370,12 +370,12 @@ class AnnotateHelper:
 
     def _serializer(self, anno_result):
         seri = {}
-        seri['omim_gene'] = SEP.join(x[0].symbol for x in anno_result['overlap_omim_genes'])
-        seri['HI_gene'] = SEP.join(f'{x[0].symbol}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_hi_genes'])
+        seri['omim_gene'] = ','.join(x[0].symbol for x in anno_result['overlap_omim_genes'])
+        seri['HI_gene'] = ','.join(f'{x[0].symbol}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_hi_genes'])
         seri['HI_region'] = SEP.join(f'{x[0].name}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_hi_regions'])
-        seri['TS_gene'] = SEP.join(f'{x[0].symbol}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_ts_genes'])
-        seri['TS_region'] = SEP.join(f'{x[0].name}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_ts_regions'])
-        seri['Pred_HI_gene'] = SEP.join(f'{x[0].symbol}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_decipher_genes'])
+        seri['TS_gene'] = ','.join(f'{x[0].symbol}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_ts_genes'])
+        seri['TS_region'] = ','.join(f'{x[0].name}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_ts_regions'])
+        seri['Pred_HI_gene'] = ','.join(f'{x[0].symbol}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_decipher_genes'])
         seri['auto_evidence'] = anno_result['rules']
         seri['auto_score'] = anno_result['score']
         seri['auto_pathogenicity'] = anno_result['pathogenicity']
