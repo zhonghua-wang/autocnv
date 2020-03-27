@@ -372,6 +372,7 @@ class AnnotateHelper:
 
     def _serializer(self, anno_result):
         seri = {}
+        seri['gene'] = ','.join(x[0].symbol for x in anno_result['overlap_genes'])
         seri['omim_gene'] = ','.join(x[0].symbol for x in anno_result['overlap_omim_genes'])
         seri['HI_gene'] = ','.join(f'{x[0].symbol}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_hi_genes'])
         seri['HI_region'] = SEP.join(f'{x[0].name}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_hi_regions'])

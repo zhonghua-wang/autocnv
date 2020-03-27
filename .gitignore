@@ -90,4 +90,5 @@ ENV/
 data/
 .code/
 .DS_Store
-
+test_data/
+.vscode/
