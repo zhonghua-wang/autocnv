@@ -28,8 +28,8 @@ SCORE_GROUP = {
 }
 
 PATHOGENICITY_LEVELS = [
-    (operator.ge, 1, 'P'), (operator.ge, 0.9, 'LP'), (operator.gt, -0.9, 'VUS'),
-    (operator.gt, -1, 'LB'), (operator.le, -1, 'B')
+    (operator.ge, 0.99, 'P'), (operator.ge, 0.9, 'LP'), (operator.gt, -0.9, 'VUS'),
+    (operator.gt, -0.99, 'LB'), (operator.le, -0.99, 'B')
 ]
 
 
@@ -194,7 +194,9 @@ class AnnotateHelper:
             else:
                 gain['2F'] = True
 
+        hi_genes = set()
         for gene, overlap, coverage in annotation['overlap_hi_genes']:
+            hi_genes.add(gene.symbol)
             if coverage == 1:
                 gain['2H'] = True
             elif overlap == 1:
@@ -206,6 +208,11 @@ class AnnotateHelper:
                 pvs1 = PVS1CNV(cnv, None, tx)
                 gain['2I'] = True
                 gain[PVS1[pvs1.verify_DUP()[0]]] = True
+
+        for gene, overlap, coverage in annotation['overlap_genes']:
+            if gene.symbol not in hi_genes and coverage != 1:
+                gain['2L'] = True
+                annotation['break_point_genes'].append(gene.symbol)
 
         # 覆盖基因个数
         gene_count = len(annotation['overlap_genes'])
@@ -256,7 +263,7 @@ class AnnotateHelper:
             length=end - start, error=error,
             outer_start=start - error, outer_end=end + error,
             inner_start=start + error, inner_end=end - error,
-            func=func
+            func=func, break_point_genes=list()
         )
 
         annotation['overlap_genes'] = list(self._gene_database.overlap(
