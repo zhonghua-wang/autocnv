@@ -85,3 +85,9 @@ def test_annotation13():
     # MECP2基因内CNV
     annotation = annotate.annotate('chrX', 153300000, 153363188, 'dup')
     assert '2I' in annotation['rules']
+
+
+def test_random():
+    annotation = annotate.annotate('chr17', 15152791, 15162532, 'del')
+    assert '2A' not in annotation['rules']
+    assert '2E' in annotation['rules']
