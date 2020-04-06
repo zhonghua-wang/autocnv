@@ -403,7 +403,12 @@ class AnnotateHelper:
         :param result_path: result file path (TSV)
         :return: -
         """
-        input_df = pd.read_csv(file_path, sep='\t')
+
+        if file_path.endswith('xlsx'):
+            input_df = pd.read_excel(file_path)
+        else:
+            input_df = pd.read_csv(file_path, sep='\t')
+
         input_df = input_df.apply(
             self._seri_anno,
             axis=1
