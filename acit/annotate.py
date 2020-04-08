@@ -11,6 +11,8 @@ import operator
 import pandas as pd
 from acit.utils import ACITEncoder
 import json
+from collections import OrderedDict
+
 
 SEP = '\n'
 DEFAULT_EMPTY_VALUE = '-'
@@ -387,8 +389,8 @@ class AnnotateHelper:
         seri['TS_gene'] = ','.join(f'{x[0].symbol}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_ts_genes'])
         seri['TS_region'] = ','.join(f'{x[0].name}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_ts_regions'])
         seri['Pred_HI_gene'] = ','.join(f'{x[0].symbol}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_decipher_genes'])
-        seri['auto_evidence'] = ','.join(anno_result['rules'].keys())
-        seri['auto_evidence_score'] = anno_result['rules']
+        seri['auto_evidence'] = ','.join(sorted(anno_result['rules']))
+        seri['auto_evidence_score'] = ','.join(f'{k}:{anno_result["rules"][k]}' for k in sorted(anno_result['rules']))
         seri['auto_score'] = anno_result['score']
         seri['auto_pathogenicity'] = anno_result['pathogenicity']
         return seri
