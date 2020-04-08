@@ -418,4 +418,7 @@ class AnnotateHelper:
             input_df = input_df.progress_apply(self._seri_anno, axis=1)
         except ImportError:
             input_df = input_df.apply(self._seri_anno, axis=1)
-        input_df.to_csv(result_path, sep='\t', index=False)
+        if result_path.endswith('xlsx'):
+            input_df.to_excel(result_path, index=False)
+        else:
+            input_df.to_csv(result_path, sep='\t', index=False)
