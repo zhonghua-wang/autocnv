@@ -56,6 +56,24 @@ class AnnotateHelper:
         self._gnomad_dup_database = DataBase(settings.GNOMAD_DUP_DATABASE)
 
     @staticmethod
+    def _norm_chrom(ch):
+        """
+        normalize chromosome name, eg. 2 -> chr2, 23 -> chrX
+        :param ch: input chromosome name
+        :return: normalized name
+        >>> norm_chrom(2)
+        'chr2'
+        >>> norm_chrom('chr23')
+        'chrX'
+        """
+        ch = str(ch).replace('chr', '')
+        if ch == '23':
+            return 'chrX'
+        if ch == '24':
+            return 'chrY'
+        return f'chr{ch}'
+
+    @staticmethod
     def _annotate_loss(**annotation):
         loss = dict()
 
@@ -408,9 +426,11 @@ class AnnotateHelper:
             input_df = pd.read_excel(file_path)
         else:
             input_df = pd.read_csv(file_path, sep='\t')
-
-        input_df = input_df.apply(
-            self._seri_anno,
-            axis=1
-        )
+        input_df['chr'] = input_df['chr'].map(self._norm_chrom)
+        try:
+            from tqdm import tqdm
+            tqdm.pandas()
+            input_df = input_df.progress_apply(self._seri_anno, axis=1)
+        except ImportError:
+            input_df = input_df.apply(self._seri_anno, axis=1)
         input_df.to_csv(result_path, sep='\t', index=False)
