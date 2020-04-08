@@ -131,6 +131,11 @@ class AnnotateHelper:
             else:
                 loss['2B'] = True
 
+        # 包含预测HI基因
+        if len(annotation['overlap_hi_genes']) + len(annotation['overlap_hi_regions']) == 0 \
+                and len(annotation['overlap_decipher_genes']) > 0:
+            loss['2H'] = True
+
         # 落入uhi基因
         for gene, overlap, coverage in annotation['overlap_uhi_genes']:
             if overlap == 1:
@@ -143,11 +148,6 @@ class AnnotateHelper:
                 loss['2F'] = True
             elif set(region.genes.split(',')) == genes:  # 覆盖相同的基因
                 loss['2F'] = True
-
-        # 包含预测HI基因
-        if len(annotation['overlap_hi_genes']) + len(annotation['overlap_hi_regions']) == 0 \
-                and len(annotation['overlap_decipher_genes']) > 0:
-            loss['2H'] = True
 
         # 覆盖基因个数
         gene_count = len(annotation['overlap_genes'])
@@ -287,11 +287,6 @@ class AnnotateHelper:
         annotation['overlap_genes'] = list(self._gene_database.overlap(
             chromosome, annotation['outer_start'], annotation['outer_end']
         ))
-        # annotation['genes'] = '\n'.join(
-        #     '{}({})/{:.2%}'.format(
-        #         gene, tx, fraction
-        #     ) for (*_, gene, tx), _, fraction in annotation['overlap_genes']
-        # )
 
         annotation['overlap_omim_genes'] = list(self._omim_gene_database.overlap(
             chromosome, annotation['outer_start'], annotation['outer_end']
@@ -304,23 +299,11 @@ class AnnotateHelper:
         annotation['overlap_hi_genes'] = list(self._hi_gene_database.overlap(
             chromosome, annotation['inner_start'], annotation['inner_end']
         ))
-        # annotation['hi_genes'] = '\n'.join(
-        #     '{}({})/{:.2%}'.format(
-        #         gene, tx, fraction
-        #     ) for (*_, gene, tx), _, fraction in annotation['overlap_hi_genes']
-        # )
 
         annotation['overlap_hi_exons'] = self._hi_exon_database.overlap_groups(
             chromosome, annotation['inner_start'], annotation['inner_end'],
             lambda record: record[0].gene_id
         )
-        # annotation['hi_exons'] = '\n'.join(
-        #     '{}({}):{}'.format(
-        #         gene, tx, re.sub(r'-.+-', '-', '-'.join(map(
-        #             lambda x: 'EX{}'.format(x), sorted(int(record[0][6]) for record in records)
-        #         )))
-        #     ) for (gene, tx), records in annotation['overlap_hi_exons'].items()
-        # )
 
         annotation['overlap_hi_cds'] = self._hi_cds_database.overlap_groups(
             chromosome, annotation['inner_start'], annotation['inner_end'],
@@ -338,16 +321,16 @@ class AnnotateHelper:
             chromosome, annotation['inner_start'], annotation['inner_end']
         ))
 
+        annotation['overlap_decipher_genes'] = list(self._decipher_gene_database.overlap(
+            chromosome, annotation['inner_start'], annotation['inner_end']
+        ))
+
         annotation['overlap_uhi_genes'] = list(self._uhi_gene_database.overlap(
             chromosome, annotation['outer_start'], annotation['outer_end']
         ))
 
         annotation['overlap_uhi_regions'] = list(self._uhi_region_database.overlap(
-            chromosome, annotation['inner_start'], annotation['inner_end']
-        ))
-
-        annotation['overlap_decipher_genes'] = list(self._decipher_gene_database.overlap(
-            chromosome, annotation['inner_start'], annotation['inner_end']
+            chromosome, annotation['outer_start'], annotation['outer_end']
         ))
 
         annotation['overlap_ts_genes'] = list(self._ts_gene_database.overlap(
@@ -363,7 +346,7 @@ class AnnotateHelper:
         ))
 
         annotation['overlap_uts_regions'] = list(self._uts_region_database.overlap(
-            chromosome, annotation['inner_start'], annotation['inner_end']
+            chromosome, annotation['outer_start'], annotation['outer_end']
         ))
 
         annotation['dgv_gain_records'] = list(self._dgv_gain_database.overlap(
