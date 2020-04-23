@@ -146,9 +146,9 @@ class AnnotateHelper:
         # 落入uhi区域
         for region, overlap, coverage in annotation['overlap_uhi_regions']:
             genes = set(gene.symbol for gene, *_ in annotation['overlap_genes'])
-            if overlap == 1:  # 完全落入区域
-                loss['2F'] = True
-            elif set(region.genes.split(',')) == genes:  # 覆盖相同的基因
+            if len(genes - set(region.genes.split(','))) > 0:
+                loss['2G'] = True
+            else:
                 loss['2F'] = True
 
         # 覆盖基因个数
@@ -162,8 +162,12 @@ class AnnotateHelper:
 
         # DGV金标
         genes = set(gene.symbol for gene, *_ in annotation['overlap_genes'])
-        for record, *_ in chain(annotation['dgv_loss_records'], annotation['gnomad_del_records']):
-            if len(genes - set(record.genes.split(','))) == 0:
+        for record, overlap, coverage in chain(
+                annotation['dgv_loss_records'], annotation['gnomad_del_records']
+        ):
+            if overlap == 1:
+                loss['4O'] = True
+            elif overlap >= 0.5 and len(genes - set(record.genes.split(','))) == 0:
                 loss['4O'] = True
 
         annotation['rules'] = loss
@@ -245,8 +249,12 @@ class AnnotateHelper:
 
         # DGV金标
         genes = set(gene.symbol for gene, *_ in annotation['overlap_genes'])
-        for record, *_ in chain(annotation['dgv_gain_records'], annotation['gnomad_dup_records']):
-            if len(genes - set(record.genes.split(','))) == 0:
+        for record, overlap, coverage in chain(
+                annotation['dgv_gain_records'], annotation['gnomad_dup_records']
+        ):
+            if overlap == 1:
+                gain['4O'] = True
+            elif overlap >= 0.5 and len(genes - set(record.genes.split(','))) == 0:
                 gain['4O'] = True
 
         annotation['rules'] = gain
