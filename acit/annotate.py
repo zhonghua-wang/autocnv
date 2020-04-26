@@ -79,7 +79,7 @@ class AnnotateHelper:
     def _annotate_loss(**annotation):
         loss = dict()
 
-        if len(annotation['overlap_genes']) + len(annotation['overlap_func_regions']) > 0:
+        if len(annotation['outer_overlap_genes']) + len(annotation['overlap_func_regions']) > 0:
             loss['1A'] = True
         else:
             loss['1B'] = True
@@ -114,8 +114,8 @@ class AnnotateHelper:
             # 位于基因内部
             else:
                 cnv = CNVRecord(
-                    annotation['chromosome'], annotation['outer_start'],
-                    annotation['outer_end'], annotation['func']
+                    annotation['chromosome'], annotation['inner_start'],
+                    annotation['inner_end'], annotation['func']
                 )
                 tx = get_transcript(gene.transcript, transcripts)
                 pvs1 = PVS1CNV(cnv, None, tx)
@@ -145,14 +145,14 @@ class AnnotateHelper:
 
         # 落入uhi区域
         for region, overlap, coverage in annotation['overlap_uhi_regions']:
-            genes = set(gene.symbol for gene, *_ in annotation['overlap_genes'])
-            if overlap == 1:  # 完全落入区域
-                loss['2F'] = True
-            elif set(region.genes.split(',')) == genes:  # 覆盖相同的基因
+            genes = set(gene.symbol for gene, *_ in annotation['outer_overlap_genes'])
+            if len(genes - set(region.genes.split(','))) > 0:
+                loss['2G'] = True
+            else:
                 loss['2F'] = True
 
         # 覆盖基因个数
-        gene_count = len(annotation['overlap_genes'])
+        gene_count = len(annotation['outer_overlap_genes'])
         if gene_count >= 35:
             loss['3C'] = True
         elif gene_count >= 25:
@@ -161,9 +161,13 @@ class AnnotateHelper:
             loss['3A'] = True
 
         # DGV金标
-        genes = set(gene.symbol for gene, *_ in annotation['overlap_genes'])
-        for record, *_ in chain(annotation['dgv_loss_records'], annotation['gnomad_del_records']):
-            if len(genes - set(record.genes.split(','))) == 0:
+        genes = set(gene.symbol for gene, *_ in annotation['outer_overlap_genes'])
+        for record, overlap, coverage in chain(
+                annotation['dgv_loss_records'], annotation['gnomad_del_records']
+        ):
+            if overlap == 1:
+                loss['4O'] = True
+            elif overlap >= 0.5 and len(genes - set(record.genes.split(','))) == 0:
                 loss['4O'] = True
 
         annotation['rules'] = loss
@@ -173,7 +177,7 @@ class AnnotateHelper:
     def _annotate_gain(**annotation):
         gain = dict()
 
-        if len(annotation['overlap_genes']) + len(annotation['overlap_func_regions']) > 0:
+        if len(annotation['outer_overlap_genes']) + len(annotation['overlap_func_regions']) > 0:
             gain['1A'] = True
         else:
             gain['1B'] = True
@@ -201,13 +205,13 @@ class AnnotateHelper:
 
         # 落入uts区域
         for region, overlap, coverage in annotation['overlap_uts_regions']:
-            genes = set(gene.symbol for gene, *_ in annotation['overlap_genes'])
+            genes = set(gene.symbol for gene, *_ in annotation['inner_overlap_genes'])
             region_genes = set(region.genes.split(','))
             if overlap == coverage == 1:
                 gain['2C'] = True
             elif len(genes - region_genes) > 0:  # 多
                 gain['2G'] = True
-            elif any(c < 1 for *_, c in annotation['overlap_genes']):  # 破坏蛋白编码基因
+            elif any(c < 1 for *_, c in annotation['inner_overlap_genes']):  # 破坏蛋白编码基因
                 gain['2E'] = True
             elif overlap == 1:
                 gain['2D'] = True
@@ -221,21 +225,21 @@ class AnnotateHelper:
                 gain['2H'] = True
             elif overlap == 1:
                 cnv = CNVRecord(
-                    annotation['chromosome'], annotation['outer_start'],
-                    annotation['outer_end'], annotation['func']
+                    annotation['chromosome'], annotation['inner_start'],
+                    annotation['inner_end'], annotation['func']
                 )
                 tx = get_transcript(gene.transcript, transcripts)
                 pvs1 = PVS1CNV(cnv, None, tx)
                 gain['2I'] = True
                 gain[PVS1[pvs1.verify_DUP()[0]]] = True
 
-        for gene, overlap, coverage in annotation['overlap_genes']:
+        for gene, overlap, coverage in annotation['inner_overlap_genes']:
             if gene.symbol not in hi_genes and coverage != 1:
                 gain['2L'] = True
                 annotation['break_point_genes'].append(gene.symbol)
 
         # 覆盖基因个数
-        gene_count = len(annotation['overlap_genes'])
+        gene_count = len(annotation['inner_overlap_genes'])
         if gene_count >= 50:
             gain['3C'] = True
         elif gene_count >= 35:
@@ -244,9 +248,13 @@ class AnnotateHelper:
             gain['3A'] = True
 
         # DGV金标
-        genes = set(gene.symbol for gene, *_ in annotation['overlap_genes'])
-        for record, *_ in chain(annotation['dgv_gain_records'], annotation['gnomad_dup_records']):
-            if len(genes - set(record.genes.split(','))) == 0:
+        genes = set(gene.symbol for gene, *_ in annotation['outer_overlap_genes'])
+        for record, overlap, coverage in chain(
+                annotation['dgv_gain_records'], annotation['gnomad_dup_records']
+        ):
+            if overlap == 1:
+                gain['4O'] = True
+            elif overlap >= 0.5 and len(genes - set(record.genes.split(','))) == 0:
                 gain['4O'] = True
 
         annotation['rules'] = gain
@@ -286,12 +294,16 @@ class AnnotateHelper:
             func=func, break_point_genes=list()
         )
 
-        annotation['overlap_genes'] = list(self._gene_database.overlap(
-            chromosome, annotation['outer_start'], annotation['outer_end']
+        annotation['inner_overlap_genes'] = list(self._gene_database.overlap(
+            chromosome, annotation['inner_start'], annotation['inner_end'],
+        ))
+
+        annotation['outer_overlap_genes'] = list(self._gene_database.overlap(
+            chromosome, annotation['outer_start'], annotation['outer_end'],
         ))
 
         annotation['overlap_omim_genes'] = list(self._omim_gene_database.overlap(
-            chromosome, annotation['outer_start'], annotation['outer_end']
+            chromosome, annotation['inner_start'], annotation['inner_end']
         ))
 
         annotation['overlap_func_regions'] = list(self._func_region_database.overlap(
