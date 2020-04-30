@@ -88,5 +88,5 @@ def test_annotation13():
 
 
 def test_random():
-    annotation = annotate.annotate('chr17', 15152791, 15162532, 'del')
-    assert '2A' not in annotation['rules']
+    annotation = annotate.annotate('chr5', 69408016, 69408880, 'dup')
+    assert '4O' not in annotation['rules']
