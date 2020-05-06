@@ -11,7 +11,7 @@ graph TD
 	
 	classDef variable fill:#feffe9
 
-	subgraph gene
+	subgraph prepare gene
         refgene("refgene")
         class refgene input
 
@@ -33,7 +33,7 @@ graph TD
         filter_protein --> gene
 	end
 	
-	subgraph omim gene
+	subgraph prepare omim gene
 		omim_gene_list("omim gene list")
 		class omim_gene_list input
 		
@@ -58,7 +58,7 @@ graph TD
 	
 	classDef variable fill:#feffe9
 	
-	subgraph hi
+	subgraph prepare hi gene
 		curation_gene("curation_gene")
 		class curation_gene input
 		
@@ -86,7 +86,7 @@ graph TD
 		filter_uhi --> uhi_gene
 	end
 
-	subgraph hi_exon
+	subgraph prepare hi exon
 		exon("extrace last exon")
 		hi_gene --> exon
 		
@@ -95,7 +95,7 @@ graph TD
 		exon --> hi_exon
 	end
 
-	subgraph clinvar_pathogenic_variants
+	subgraph prepare clinvar pathogenic variants
 		all_variants("all clinical pathogenic variants")
 		class all_variants input
 		
@@ -108,7 +108,7 @@ graph TD
 		exon_variants --> pathogenic_exon_variants
 	end
 	
-	subgraph hi_cds
+	subgraph prepare hi cds
 		cds["extract CDS"]
 		hi_gene --> cds
 		
@@ -130,7 +130,7 @@ graph TD
 	
 	classDef variable fill:#feffe9
 	
-	subgraph ts
+	subgraph prepare ts gene
 		curation_gene("curation_gene")
 		class curation_gene input
 		
@@ -172,7 +172,7 @@ graph TD
 	
 	classDef variable fill:#feffe9
 	
-	subgraph hi
+	subgraph prepare hi region
 		curation("curation_region")
 		class curation input
 		
@@ -210,7 +210,7 @@ graph TD
 	
 	classDef variable fill:#feffe9
 	
-	subgraph ts
+	subgraph prepare ts region
 		curation("curation_region")
 		class curation input
 		
@@ -255,7 +255,7 @@ graph TD
 	
 	classDef variable fill:#feffe9
 	
-	subgraph decipher
+	subgraph prepare decipher
 		predictions("decipher")
 		class predictions input
 		
@@ -297,7 +297,7 @@ graph TD
 	
 	classDef variable fill:#feffe9
 	
-	subgraph gnomad	
+	subgraph prepare gnomad	
 		
 		gnomad("gnomad")
 		class gnomad input
@@ -340,7 +340,7 @@ graph TD
 		filter_dup --> gnomad_dup
 	end
 	
-	subgraph dgv
+	subgraph prepare dgv
 		dgv("dgv")
 		class dgv input
 		
