@@ -84,9 +84,17 @@ class AnnotateHelper:
         else:
             loss['1B'] = True
 
+        # hi区域
+        for region, overlap, coverage in annotation['overlap_hi_regions']:
+            if coverage == 1:  # 完全覆盖区域
+                loss['2A'] = True
+            elif len(set(gene.symbol for gene, *_ in annotation['overlap_hi_genes'])) == 0:
+                # 未覆盖hi基因
+                loss['2B'] = True
+
+        # hi基因
         for gene, overlap, coverage in annotation['overlap_hi_genes']:
-            # 是否覆盖整个基因
-            if coverage == 1:
+            if coverage == 1:  # 完全覆盖基因
                 loss['2A'] = True
             elif overlap < 1:  # 是否位于基因内部
                 if any(
@@ -121,17 +129,6 @@ class AnnotateHelper:
                 pvs1 = PVS1CNV(cnv, None, tx)
                 loss['2E'] = True
                 loss[PVS1[pvs1.verify_DEL()[0]]] = True
-
-        # 完全覆盖hi区域
-        for region, overlap, coverage in annotation['overlap_hi_regions']:
-            if coverage == 1:
-                loss['2A'] = True
-            elif set(region.omim_genes.split(',')) == \
-                    set(gene.symbol for gene, *_ in annotation['overlap_omim_genes']):
-                # 是否覆盖区域内所有OMIM致病基因
-                loss['2A'] = True
-            else:
-                loss['2B'] = True
 
         # 包含预测HI基因
         if len(annotation['overlap_hi_genes']) + len(annotation['overlap_hi_regions']) == 0 \
@@ -170,6 +167,12 @@ class AnnotateHelper:
             elif overlap >= 0.5 and len(genes - set(record.genes.split(','))) == 0:
                 loss['4O'] = True
 
+            if any(
+                (f.startswith('af') and float(v) < 0.01 for f, v in record._asdict().items())
+            ):
+                loss['4O'] = False
+                break
+
         annotation['rules'] = loss
         return annotation
 
@@ -182,21 +185,18 @@ class AnnotateHelper:
         else:
             gain['1B'] = True
 
-        for gene, overlap, coverage in annotation['overlap_ts_genes']:
-            # 覆盖整个基因
-            if coverage == 1:
-                gain['2A'] = True
-
         # 完全覆盖ts区域
         for region, overlap, coverage in annotation['overlap_ts_regions']:
             if coverage == 1:  # 是否覆盖整改区域
                 gain['2A'] = True
-            elif set(region.omim_genes.split(',')) == \
-                    set(gene.symbol for gene, *_ in annotation['overlap_omim_genes']):
-                # 是否覆盖区域内所有OMIM致病基因
-                gain['2A'] = True
-            else:
+            elif len(set(gene.symbol for gene, *_ in annotation['overlap_ts_genes'])) == 0:
+                # 未覆盖ts基因
                 gain['2B'] = True
+
+        for gene, overlap, coverage in annotation['overlap_ts_genes']:
+            # 覆盖整个基因
+            if coverage == 1:
+                gain['2A'] = True
 
         # 落入uts基因
         for gene, overlap, coverage in annotation['overlap_uts_genes']:
@@ -256,6 +256,12 @@ class AnnotateHelper:
                 gain['4O'] = True
             elif overlap >= 0.5 and len(genes - set(record.genes.split(','))) == 0:
                 gain['4O'] = True
+
+            if any(
+                    (f.startswith('af') and float(v) < 0.01 for f, v in record._asdict().items())
+            ):
+                gain['4O'] = False
+                break
 
         annotation['rules'] = gain
         return annotation
