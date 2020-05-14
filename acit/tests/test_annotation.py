@@ -88,19 +88,20 @@ def test_annotation13():
 
 
 def test_4O():
+    annotation = annotate.annotate('chr1', 196757278, 196796716, 'del')
+    assert '4O' in annotation['rules']
     annotation = annotate.annotate('chr15', 22750305, 23226254, 'del')
     assert '4O' not in annotation['rules']
+    annotation = annotate.annotate('chr1', 25584597, 25767647, 'del')
+    assert '4O' not in annotation['rules']
+    annotation = annotate.annotate('chr1', 148974342, 149441884, 'dup')
+    assert '4O' in annotation['rules']
     annotation = annotate.annotate('chr15', 22750305, 23226254, 'dup')
     assert '4O' not in annotation['rules']
-    annotation = annotate.annotate('chr7', 1, 100931, 'dup')
-    assert '4O' in annotation['rules']
     annotation = annotate.annotate('chr1', 425, 69091, 'dup')
-    assert '4O' not in annotation['rules']
-    annotation = annotate.annotate('chr1', 25584597, 25767647, 'del')
     assert '4O' not in annotation['rules']
 
 
 def test_random():
-    annotation = annotate.annotate('chr17', 29550192, 29573353, 'del')
-    assert '2A' not in annotation['rules']
-    assert '2E' in annotation['rules']
+    annotation = annotate.annotate('chr1', 148974342, 149441884, 'dup')
+    assert '4O' in annotation['rules']

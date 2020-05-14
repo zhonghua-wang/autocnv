@@ -13,7 +13,6 @@ from acit.utils import ACITEncoder
 import json
 from collections import OrderedDict
 
-
 SEP = '\n'
 DEFAULT_EMPTY_VALUE = '-'
 
@@ -141,8 +140,8 @@ class AnnotateHelper:
                 loss['2F'] = True
 
         # 落入uhi区域
+        genes = set(gene.symbol for gene, *_ in annotation['outer_overlap_genes'])
         for region, overlap, coverage in annotation['overlap_uhi_regions']:
-            genes = set(gene.symbol for gene, *_ in annotation['outer_overlap_genes'])
             if len(genes - set(region.genes.split(','))) > 0:
                 loss['2G'] = True
             else:
@@ -159,19 +158,23 @@ class AnnotateHelper:
 
         # DGV金标
         genes = set(gene.symbol for gene, *_ in annotation['outer_overlap_genes'])
+        l, m = 0, 0
         for record, overlap, coverage in chain(
                 annotation['dgv_loss_records'], annotation['gnomad_del_records']
         ):
-            if overlap == 1:
-                loss['4O'] = True
-            elif overlap >= 0.5 and len(genes - set(record.genes.split(','))) == 0:
-                loss['4O'] = True
-
-            if any(
-                (f.startswith('af') and float(v) < 0.01 for f, v in record._asdict().items())
+            if overlap == 1 and any(
+                float(v) >= 0.01 for f, v in record._asdict().items() if f.startswith('af')
             ):
-                loss['4O'] = False
+                loss['4O'] = True
                 break
+            elif overlap >= 0.5 and len(genes - set(record.genes.split(','))) == 0:
+                if any(float(v) < 0.01 for f, v in record._asdict().items() if f.startswith('af')):
+                    m += 1
+                else:
+                    l += 1
+        else:
+            if l > 0 and m == 0:
+                loss['4O'] = True
 
         annotation['rules'] = loss
         return annotation
@@ -249,19 +252,24 @@ class AnnotateHelper:
 
         # DGV金标
         genes = set(gene.symbol for gene, *_ in annotation['outer_overlap_genes'])
+        l, m = 0, 0
         for record, overlap, coverage in chain(
                 annotation['dgv_gain_records'], annotation['gnomad_dup_records']
         ):
-            if overlap == 1:
-                gain['4O'] = True
-            elif overlap >= 0.5 and len(genes - set(record.genes.split(','))) == 0:
-                gain['4O'] = True
-
-            if any(
-                    (f.startswith('af') and float(v) < 0.01 for f, v in record._asdict().items())
+            if overlap == 1 and any(
+                    float(v) >= 0.01 for f, v in record._asdict().items() if f.startswith('af')
             ):
-                gain['4O'] = False
+                gain['4O'] = True
                 break
+            elif overlap >= 0.5 and len(genes - set(record.genes.split(','))) == 0:
+                if any(float(v) < 0.01 for f, v in record._asdict().items() if
+                       f.startswith('af')):
+                    m += 1
+                else:
+                    l += 1
+        else:
+            if l > 0 and m == 0:
+                gain['4O'] = True
 
         annotation['rules'] = gain
         return annotation
@@ -402,20 +410,28 @@ class AnnotateHelper:
         seri = {}
         seri['inner_gene'] = ','.join(x[0].symbol for x in anno_result['inner_overlap_genes'])
         seri['inner_omim_gene'] = ','.join(x[0].symbol for x in anno_result['overlap_omim_genes'])
-        seri['HI_gene'] = ','.join(f'{x[0].symbol}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_hi_genes'])
-        seri['HI_region'] = SEP.join(f'{x[0].name}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_hi_regions'])
-        seri['TS_gene'] = ','.join(f'{x[0].symbol}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_ts_genes'])
-        seri['TS_region'] = ','.join(f'{x[0].name}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_ts_regions'])
-        seri['Pred_HI_gene'] = ','.join(f'{x[0].symbol}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_decipher_genes'])
+        seri['HI_gene'] = ','.join(
+            f'{x[0].symbol}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_hi_genes'])
+        seri['HI_region'] = SEP.join(
+            f'{x[0].name}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_hi_regions'])
+        seri['TS_gene'] = ','.join(
+            f'{x[0].symbol}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_ts_genes'])
+        seri['TS_region'] = ','.join(
+            f'{x[0].name}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_ts_regions'])
+        seri['Pred_HI_gene'] = ','.join(
+            f'{x[0].symbol}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_decipher_genes'])
         seri['auto_evidence'] = ','.join(sorted(anno_result['rules']))
-        seri['auto_evidence_score'] = ','.join(f'{k}:{anno_result["rules"][k]}' for k in sorted(anno_result['rules']))
+        seri['auto_evidence_score'] = ','.join(
+            f'{k}:{anno_result["rules"][k]}' for k in sorted(anno_result['rules']))
         seri['auto_score'] = anno_result['score']
         seri['auto_pathogenicity'] = anno_result['pathogenicity']
         return seri
 
     def _seri_anno(self, seri: pd.Series) -> pd.Series:
-        anno_result = self.annotate(seri['chr'], seri['start'], seri['end'], seri['type'], seri['error'])
-        return seri.append(pd.Series(self._serializer(anno_result)).replace('', '-').fillna(DEFAULT_EMPTY_VALUE))
+        anno_result = self.annotate(seri['chr'], seri['start'], seri['end'], seri['type'],
+                                    seri['error'])
+        return seri.append(
+            pd.Series(self._serializer(anno_result)).replace('', '-').fillna(DEFAULT_EMPTY_VALUE))
 
     def annotation_file(self, file_path, result_path):
         """
