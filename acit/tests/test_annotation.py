@@ -103,5 +103,5 @@ def test_4O():
 
 
 def test_random():
-    annotation = annotate.annotate('chr1', 148974342, 149441884, 'dup')
-    assert '4O' in annotation['rules']
+    annotation = annotate.annotate('chr1', 143721526, 149232481, 'del')
+    assert '2G' in annotation['rules']

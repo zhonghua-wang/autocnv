@@ -306,18 +306,18 @@ graph TD
 		gnomad --> filter_qc
 		
 		subgraph af filters
-			filter_af["filter AF >= 0.01 & N_BI_GENOS >= 1000"]
+			filter_af["filter N_BI_GENOS >= 1000"]
 			
-			filter_afr["filter AFR_AF >= 0.01 & AFR_N_BI_GENOS >= 1000"]
+			filter_afr["filter AFR_N_BI_GENOS >= 1000"]
 			filter_af -. or .-> filter_afr
 			
-			filter_amr["filter AMR_AF >= 0.01 & AMR_N_BI_GENOS >= 1000"]
+			filter_amr["filter AMR_N_BI_GENOS >= 1000"]
 			filter_afr -. or .-> filter_amr
 			
-			filter_eas["filter EAS_AF >= 0.01 & EAS_N_BI_GENOS >= 1000"]
+			filter_eas["filter EAS_N_BI_GENOS >= 1000"]
 			filter_amr -. or .-> filter_eas
 			
-			filter_eur["filter EUR_AF >= 0.01 & EUR_N_BI_GENOS >= 1000"]
+			filter_eur["filter EUR_N_BI_GENOS >= 1000"]
 			filter_eas -. or .-> filter_eur
 		end
 		filter_qc --> filter_af
