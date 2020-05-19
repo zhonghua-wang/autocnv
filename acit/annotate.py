@@ -9,9 +9,6 @@ from collections import defaultdict
 from itertools import chain
 import operator
 import pandas as pd
-from acit.utils import ACITEncoder
-import json
-from collections import OrderedDict
 
 SEP = '\n'
 DEFAULT_EMPTY_VALUE = '-'
@@ -21,6 +18,7 @@ PVS1 = {
     Strength.Supporting: 'PVS1_P', Strength.Unmet: 'PVS1_U'
 }
 
+# 计分分组配置，同一组证据仅计算最大分值
 SCORE_GROUP = {
     'del': {
         rule: 'G1' for rule in ('2A', '2B', '2C-1', '2C-2', '2D-1', '2D-2', '2D-3', '2D-4', '2E')
@@ -28,6 +26,7 @@ SCORE_GROUP = {
     'dup': {}
 }
 
+# 致病性判断分级配置
 PATHOGENICITY_LEVELS = [
     (operator.ge, 0.99, 'P'), (operator.ge, 0.9, 'LP'), (operator.gt, -0.9, 'VUS'),
     (operator.gt, -0.99, 'LB'), (operator.le, -0.99, 'B')
@@ -76,12 +75,21 @@ class AnnotateHelper:
 
     @staticmethod
     def _annotate_loss(**annotation):
+        """
+        计算拷贝数减少的CNV的证据项
+        :param annotation: 已注释的CNV
+        :return: 注释后的CNV
+        """
         loss = dict()
+
+        # Section 1
 
         if len(annotation['outer_overlap_genes']) + len(annotation['overlap_func_regions']) > 0:
             loss['1A'] = True
         else:
             loss['1B'] = True
+
+        # Section 2
 
         # hi区域
         for region, overlap, coverage in annotation['overlap_hi_regions']:
@@ -107,7 +115,7 @@ class AnnotateHelper:
                             and len(annotation['overlap_hi_cds'][gene.gene_id]) > 0:  # 是否覆盖CDS
                         if len(annotation['variants']) > 0:  # 末位外显子是否有致病变异
                             loss['2D-2'] = True
-                        else:
+                        else:  # 末尾外显子无致病变异
                             loss['2D-3'] = True
                     else:
                         # 不覆盖CDS区
@@ -116,7 +124,7 @@ class AnnotateHelper:
                 elif gene.gene_id in annotation['overlap_hi_cds'] \
                         and len(annotation['overlap_hi_cds'][gene.gene_id]) > 0:  # 是否覆盖5'端CDS
                     loss['2C-1'] = True
-                else:
+                else:  # 未覆盖5'端CDS
                     loss['2C-2'] = True
             # 位于基因内部
             else:
@@ -147,6 +155,8 @@ class AnnotateHelper:
             else:
                 loss['2F'] = True
 
+        # Section 3
+
         # 覆盖基因个数
         gene_count = len(annotation['outer_overlap_genes'])
         if gene_count >= 35:
@@ -156,7 +166,9 @@ class AnnotateHelper:
         elif gene_count >= 0:
             loss['3A'] = True
 
-        # DGV金标
+        # Section 4
+
+        # DGV金标和Gnomad
         genes = set(gene.symbol for gene, *_ in annotation['outer_overlap_genes'])
         l, m = 0, 0
         for record, overlap, coverage in chain(
@@ -164,16 +176,19 @@ class AnnotateHelper:
         ):
             if overlap == 1 and any(
                 float(v) >= 0.01 for f, v in record._asdict().items() if f.startswith('af')
-            ):
+            ):  # 完全覆盖待解读CNV且频率大于1%
                 loss['4O'] = True
                 break
             elif overlap >= 0.5 and len(genes - set(record.genes.split(','))) == 0:
+                # 与待解读CNV重叠超过50%且覆盖全部蛋白编码基因
                 if any(float(v) < 0.01 for f, v in record._asdict().items() if f.startswith('af')):
+                    # 频率小于1%
                     m += 1
                 else:
+                    # 频率大于1%
                     l += 1
         else:
-            if l > 0 and m == 0:
+            if l > 0 and m == 0:  # 存在频率大于1%且不存在小于1%的CNV
                 loss['4O'] = True
 
         annotation['rules'] = loss
@@ -181,12 +196,21 @@ class AnnotateHelper:
 
     @staticmethod
     def _annotate_gain(**annotation):
+        """
+        计算拷贝数减少的CNV的证据项
+        :param annotation: 已注释的CNV
+        :return: 注释后的CNV
+        """
         gain = dict()
+
+        # Section 1
 
         if len(annotation['outer_overlap_genes']) + len(annotation['overlap_func_regions']) > 0:
             gain['1A'] = True
         else:
             gain['1B'] = True
+
+        # Section 2
 
         # 完全覆盖ts区域
         for region, overlap, coverage in annotation['overlap_ts_regions']:
@@ -210,23 +234,24 @@ class AnnotateHelper:
         for region, overlap, coverage in annotation['overlap_uts_regions']:
             genes = set(gene.symbol for gene, *_ in annotation['inner_overlap_genes'])
             region_genes = set(region.genes.split(','))
-            if overlap == coverage == 1:
+            if overlap == coverage == 1:  # 与良性区域完全一致
                 gain['2C'] = True
-            elif len(genes - region_genes) > 0:  # 多
+            elif len(genes - region_genes) > 0:  # 编码蛋白基因比良性区域多
                 gain['2G'] = True
             elif any(c < 1 for *_, c in annotation['inner_overlap_genes']):  # 破坏蛋白编码基因
                 gain['2E'] = True
-            elif overlap == 1:
+            elif overlap == 1:  # 被良性区域完全覆盖
                 gain['2D'] = True
             else:
                 gain['2F'] = True
 
+        # hi基因
         hi_genes = set()
         for gene, overlap, coverage in annotation['overlap_hi_genes']:
             hi_genes.add(gene.symbol)
-            if coverage == 1:
+            if coverage == 1:  # 完全覆盖
                 gain['2H'] = True
-            elif overlap == 1:
+            elif overlap == 1:  # 两端均位于基因内
                 cnv = CNVRecord(
                     annotation['chromosome'], annotation['inner_start'],
                     annotation['inner_end'], annotation['func']
@@ -236,10 +261,13 @@ class AnnotateHelper:
                 gain['2I'] = True
                 gain[PVS1[pvs1.verify_DUP()[0]]] = True
 
+        # 非hi基因
         for gene, overlap, coverage in annotation['inner_overlap_genes']:
             if gene.symbol not in hi_genes and coverage != 1:
                 gain['2L'] = True
                 annotation['break_point_genes'].append(gene.symbol)
+
+        # Section 3
 
         # 覆盖基因个数
         gene_count = len(annotation['inner_overlap_genes'])
@@ -250,7 +278,9 @@ class AnnotateHelper:
         elif gene_count >= 0:
             gain['3A'] = True
 
-        # DGV金标
+        # Section 4
+
+        # DGV金标和Gnomad
         genes = set(gene.symbol for gene, *_ in annotation['outer_overlap_genes'])
         l, m = 0, 0
         for record, overlap, coverage in chain(
@@ -258,17 +288,20 @@ class AnnotateHelper:
         ):
             if overlap == 1 and any(
                     float(v) >= 0.01 for f, v in record._asdict().items() if f.startswith('af')
-            ):
+            ):  # 完全覆盖待解读CNV且频率大于1%
                 gain['4O'] = True
                 break
             elif overlap >= 0.5 and len(genes - set(record.genes.split(','))) == 0:
+                # 与待解读CNV重叠超过50%且覆盖全部蛋白编码基因
                 if any(float(v) < 0.01 for f, v in record._asdict().items() if
                        f.startswith('af')):
+                    # 频率小于1%
                     m += 1
                 else:
+                    # 频率大于1%
                     l += 1
         else:
-            if l > 0 and m == 0:
+            if l > 0 and m == 0:  # 存在频率大于1%且不存在小于1%的CNV
                 gain['4O'] = True
 
         annotation['rules'] = gain
@@ -276,21 +309,36 @@ class AnnotateHelper:
 
     @staticmethod
     def merge_score(func, **rules):
+        """
+        整合所有证据项得分
+        :param func: 变异类型
+        :param rules: 证据项
+        :return: 生成各证据项得分
+        """
         groups = defaultdict(list)
         for rule, score in rules.items():
-            try:
+            try:  # 需要分组计分的证据项先收集起来
                 groups[SCORE_GROUP[func][rule]].append(score)
-            except KeyError:
+            except KeyError:  # 无需分组计分的证据项直接计分
                 yield score
-        for _, scores in groups.items():
+        for _, scores in groups.items():  # 分组计分的证据项只计算最大分值
             yield max(scores)
 
     @staticmethod
     def judge(func, **rules):
+        """
+        判断给定的证据项组合最终的致病性
+        :param func: 变异类型
+        :param rules: 勾选的证据项
+        :return: 证据项、得分和致病性
+        """
+        # 获取所有证据项得分
         rules = {
             rule: settings.DEFAULT_SCORE[func][rule] for rule, check in rules.items() if check
         }
+        # 整合所有证据项得分
         score = sum(AnnotateHelper.merge_score(func, **rules))
+        # 判断致病性
         for op, cutoff, level in PATHOGENICITY_LEVELS[:-1]:
             if op(score, cutoff):
                 pathogenicity = level
@@ -300,6 +348,15 @@ class AnnotateHelper:
         return rules, score, pathogenicity
 
     def annotate(self, chromosome, start, end, func, error=0):
+        """
+        对给定CNV进行注释
+        :param chromosome: 染色体编号
+        :param start: 起始位置
+        :param end: 终止位置
+        :param func: 变异类型
+        :param error: 误差值
+        :return: 注释结果
+        """
         annotation = dict(
             chromosome=chromosome, start=start, end=end,
             length=end - start, error=error,
