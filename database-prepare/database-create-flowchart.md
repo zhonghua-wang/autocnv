@@ -277,7 +277,7 @@ graph TD
 		gnomad --> join_lof
 		join_pli --> join_lof
 		
-		filter["filter pLI >= 0.9 & hi_score < 0.1 & oe_lof_upper < 0.35"]
+		filter["filter pLI >= 0.9 & hi_index < 10% & oe_lof_upper < 0.35"]
 		join_lof --> filter
 		
 		decipher("decipher")
