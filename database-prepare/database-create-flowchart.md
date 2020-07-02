@@ -1,6 +1,6 @@
 # ACIT数据库生成流程
 
-## 基因
+## 基因 (Gene)
 
 ```mermaid
 graph TD
@@ -47,7 +47,7 @@ graph TD
 	end
 ```
 
-## 单倍体敏感基因
+## 单倍体敏感基因(HI Gene)
 
 ```mermaid
 graph TD
@@ -119,7 +119,7 @@ graph TD
 	
 ```
 
-## 多倍体敏感基因
+## 多倍体敏感基因 (TS Gene)
 
 ```mermaid
 graph TD
@@ -161,7 +161,7 @@ graph TD
 	end
 ```
 
-## 单倍体敏感区域
+## 单倍体敏感区域 (HI region)
 
 ```mermaid
 graph TD
@@ -199,7 +199,7 @@ graph TD
 	end
 ```
 
-## 多倍体敏感区域
+## 多倍体敏感区域 (TS region)
 
 ```mermaid
 graph TD
@@ -244,7 +244,7 @@ graph TD
 	end
 ```
 
-## 预测基因(decipher)
+## 预测基因 (decipher)
 
 ```mermaid
 graph TD
