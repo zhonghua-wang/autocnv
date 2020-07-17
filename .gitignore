@@ -92,3 +92,4 @@ data/
 .DS_Store
 test_data/
 .vscode/
+raw_data/
