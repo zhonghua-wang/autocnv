@@ -1,4 +1,4 @@
-# ACIT: an **A**utomatic **C**opy number variant **I**nterpretation **T**ool
+# AutoCNV: an **Auto**matic **C**opy **N**umber **V**ariant Interpretation Tool
 
 ## Installation
 

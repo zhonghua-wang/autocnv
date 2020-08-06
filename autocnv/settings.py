@@ -27,6 +27,6 @@ except ImportError:
     pass
 
 try:
-    from acit.local_settings import *
+    from autocnv.local_settings import *
 except ImportError:
     pass

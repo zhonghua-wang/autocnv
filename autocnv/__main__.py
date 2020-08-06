@@ -1,5 +1,5 @@
 import argparse
-from acit.annotate import AnnotateHelper
+from autocnv.annotate import AnnotateHelper
 
 
 if __name__ == '__main__':

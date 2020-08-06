@@ -1,4 +1,4 @@
-from acit.annotate import AnnotateHelper
+from autocnv.annotate import AnnotateHelper
 
 annotate = AnnotateHelper()
 

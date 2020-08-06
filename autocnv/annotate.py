@@ -1,6 +1,6 @@
-from acit.database import DataBase
+from autocnv.database import DataBase
 from pysam import VariantFile
-from acit import settings
+from autocnv import settings
 from autopvs1.cnv import CNVRecord, PVS1CNV
 from autopvs1.utils import get_transcript
 from autopvs1.read_data import transcripts
