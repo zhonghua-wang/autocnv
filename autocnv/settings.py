@@ -1,3 +1,5 @@
+import os
+
 DEFAULT_SCORE = {
     'del': {
         '1A': 0, '1B': -0.6,
@@ -20,6 +22,51 @@ DEFAULT_SCORE = {
         'PVS1': 0.9, 'PVS1_S': 0.45, 'PVS1_M': 0.3, 'PVS1_P': 0.15, 'PVS1_U': 0
     }
 }
+
+
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# BASE_DIR = '/Users/zhonghua/workspace/python-space/acit/'
+
+GENE_DATABASE = os.path.join(BASE_DIR, 'data', 'gene.sorted.bed.gz')
+
+OMIM_GENE_DATABASE = os.path.join(BASE_DIR, 'data', 'omim-gene.sorted.bed.gz')
+
+FUNC_REGION_DATABASE = os.path.join(BASE_DIR, 'data', 'func-region.sorted.gz')
+
+HI_GENE_DATABASE = os.path.join(BASE_DIR, 'data', 'hi-gene.sorted.bed.gz')
+
+HI_EXON_DATABASE = os.path.join(BASE_DIR, 'data', 'hi-exon.sorted.bed.gz')
+
+HI_CDS_DATABASE = os.path.join(BASE_DIR, 'data', 'hi-cds.sorted.bed.gz')
+
+CLINVAR_PATHOGENIC_DATABASE = os.path.join(
+    BASE_DIR, 'data', 'clinvar-pathogenic.sorted.vcf.gz'
+)
+
+UHI_GENE_DATABASE = os.path.join(BASE_DIR, 'data', 'uhi-gene.sorted.bed.gz')
+
+HI_REGION_DATABASE = os.path.join(BASE_DIR, 'data', 'hi-region.sorted.bed.gz')
+
+UHI_REGION_DATABASE = os.path.join(BASE_DIR, 'data', 'uhi-region.sorted.bed.gz')
+
+DECIPHER_GENE_DATABASE = os.path.join(BASE_DIR, 'data', 'decipher-gene.sorted.bed.gz')
+
+TS_GENE_DATABASE = os.path.join(BASE_DIR, 'data', 'ts-gene.sorted.bed.gz')
+
+TS_REGION_DATABASE = os.path.join(BASE_DIR, 'data', 'ts-region.sorted.bed.gz')
+
+UTS_GENE_DATABASE = os.path.join(BASE_DIR, 'data', 'uts-gene.sorted.bed.gz')
+
+UTS_REGION_DATABASE = os.path.join(BASE_DIR, 'data', 'uts-region.sorted.bed.gz')
+
+DGV_GAIN_DATABASE = os.path.join(BASE_DIR, 'data', 'dgv-gain.sorted.bed.gz')
+
+DGV_LOSS_DATABASE = os.path.join(BASE_DIR, 'data', 'dgv-loss.sorted.bed.gz')
+
+GNOMAD_DEL_DATABASE = os.path.join(BASE_DIR, 'data', 'gnomad-del.sorted.bed.gz')
+
+GNOMAD_DUP_DATABASE = os.path.join(BASE_DIR, 'data', 'gnomad-dup.sorted.bed.gz')
 
 try:
     from local_settings import *
