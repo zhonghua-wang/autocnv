@@ -456,10 +456,16 @@ class AnnotateHelper:
             annotation = self._annotate_gain(**annotation)
         else:
             raise ValueError('Unknown func `{}`'.format(func))
-
+        
         annotation['rules'], annotation['score'], annotation['pathogenicity'] = self.judge(
             func, **annotation['rules']
         )
+        # PVS1
+        if func == 'del' and '2E' in annotation['rules'].keys():
+            annotation['rules']['2E'] = annotation['rules'].get('PVS1')
+        elif func == 'dup' and '2I' in annotation['rules'].keys():
+            annotation['rules']['2I'] = annotation['rules'].get('PVS1')
+        annotation['pvs1'] = annotation['rules'].pop('PVS1', None)
 
         return annotation
 
@@ -480,8 +486,17 @@ class AnnotateHelper:
         seri['auto_evidence'] = ','.join(sorted(anno_result['rules']))
         seri['auto_evidence_score'] = ','.join(
             f'{k}:{anno_result["rules"][k]}' for k in sorted(anno_result['rules']))
+        seri['benign_hi_gene'] = ','.join(
+            f'{x[0].symbol}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_uhi_genes'])
+        seri['benign_hi_region'] = ','.join(
+            f'{x[0].symbol}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_uhi_regions'])
+        seri['benign_ts_gene'] = ','.join(
+            f'{x[0].symbol}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_uts_genes'])
+        seri['benign_ts_region'] = ','.join(
+            f'{x[0].symbol}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_uts_regions'])
         seri['auto_score'] = anno_result['score']
         seri['auto_pathogenicity'] = anno_result['pathogenicity']
+        seri['pvs1'] = anno_result['pvs1']
         return seri
 
     def _seri_anno(self, seri: pd.Series) -> pd.Series:
