@@ -511,6 +511,18 @@ class AnnotateHelper:
             f'{x[0].symbol}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_uts_genes'])
         seri['benign_ts_region'] = ','.join(
             f'{x[0].name}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_uts_regions'])
+        seri['dgv_loss_records'] = ','.join(
+            f'{x[0].genes}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['dgv_loss_records']
+        )
+        seri['dgv_gain_records'] = ','.join(
+            f'{x[0].genes}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['dgv_gain_records']
+        )
+        seri['gnomad_loss_records'] = ','.join(
+            f'{x[0].genes}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['gnomad_del_records']
+        )
+        seri['gnomad_gain_records'] = ','.join(
+            f'{x[0].genes}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['gnomad_dup_records']
+        )
         seri['auto_score'] = anno_result['score']
         seri['auto_pathogenicity'] = anno_result['pathogenicity']
         seri['pvs1'] = anno_result['pvs1']
