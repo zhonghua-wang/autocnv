@@ -41,11 +41,13 @@ class AnnotateHelper:
         self._hi_gene_database = DataBase(settings.HI_GENE_DATABASE)
         self._hi_exon_database = DataBase(settings.HI_EXON_DATABASE)
         self._hi_cds_database = DataBase(settings.HI_CDS_DATABASE)
-        self._clinvar_pathogenic_database = VariantFile(settings.CLINVAR_PATHOGENIC_DATABASE)
+        self._clinvar_pathogenic_database = VariantFile(
+            settings.CLINVAR_PATHOGENIC_DATABASE)
         self._uhi_gene_database = DataBase(settings.UHI_GENE_DATABASE)
         self._hi_region_database = DataBase(settings.HI_REGION_DATABASE)
         self._uhi_region_database = DataBase(settings.UHI_REGION_DATABASE)
-        self._decipher_gene_database = DataBase(settings.DECIPHER_GENE_DATABASE)
+        self._decipher_gene_database = DataBase(
+            settings.DECIPHER_GENE_DATABASE)
         self._ts_gene_database = DataBase(settings.TS_GENE_DATABASE)
         self._ts_region_database = DataBase(settings.TS_REGION_DATABASE)
         self._uts_gene_database = DataBase(settings.UTS_GENE_DATABASE)
@@ -135,7 +137,8 @@ class AnnotateHelper:
                 tx = get_transcript(gene.transcript, transcripts)
                 pvs1 = PVS1CNV(cnv, None, tx)
                 loss['2E'] = True
-                loss[PVS1[pvs1.verify_DEL()[0]]] = True
+                #loss[PVS1[pvs1.verify_DEL()[0]]] = True
+                loss['pvs1'] = PVS1[pvs1.verify_DEL()[0]]
 
         # 包含预测HI基因
         if len(annotation['overlap_hi_genes']) + len(annotation['overlap_hi_regions']) == 0 \
@@ -148,7 +151,8 @@ class AnnotateHelper:
                 loss['2F'] = True
 
         # 落入uhi区域
-        genes = set(gene.symbol for gene, *_ in annotation['outer_overlap_genes'])
+        genes = set(gene.symbol for gene, *
+                    _ in annotation['outer_overlap_genes'])
         for region, overlap, coverage in annotation['overlap_uhi_regions']:
             if len(genes - set(region.genes.split(','))) > 0:
                 loss['2G'] = True
@@ -169,7 +173,8 @@ class AnnotateHelper:
         # Section 4
 
         # DGV金标和Gnomad
-        genes = set(gene.symbol for gene, *_ in annotation['outer_overlap_genes'])
+        genes = set(gene.symbol for gene, *
+                    _ in annotation['outer_overlap_genes'])
         l, m = 0, 0
         for record, overlap, coverage in chain(
                 annotation['dgv_loss_records'], annotation['gnomad_del_records']
@@ -232,13 +237,15 @@ class AnnotateHelper:
 
         # 落入uts区域
         for region, overlap, coverage in annotation['overlap_uts_regions']:
-            genes = set(gene.symbol for gene, *_ in annotation['inner_overlap_genes'])
+            genes = set(gene.symbol for gene, *
+                        _ in annotation['inner_overlap_genes'])
             region_genes = set(region.genes.split(','))
             if overlap == coverage == 1:  # 与良性区域完全一致
                 gain['2C'] = True
             elif len(genes - region_genes) > 0:  # 编码蛋白基因比良性区域多
                 gain['2G'] = True
-            elif any(c < 1 for *_, c in annotation['inner_overlap_genes']):  # 破坏蛋白编码基因
+            # 破坏蛋白编码基因
+            elif any(c < 1 for *_, c in annotation['inner_overlap_genes']):
                 gain['2E'] = True
             elif overlap == 1:  # 被良性区域完全覆盖
                 gain['2D'] = True
@@ -259,7 +266,8 @@ class AnnotateHelper:
                 tx = get_transcript(gene.transcript, transcripts)
                 pvs1 = PVS1CNV(cnv, None, tx)
                 gain['2I'] = True
-                gain[PVS1[pvs1.verify_DUP()[0]]] = True
+                # gain[PVS1[pvs1.verify_DUP()[0]]] = True
+                gain['pvs1'] = PVS1[pvs1.verify_DUP()[0]]
 
         # 非hi基因
         for gene, overlap, coverage in annotation['inner_overlap_genes']:
@@ -281,7 +289,8 @@ class AnnotateHelper:
         # Section 4
 
         # DGV金标和Gnomad
-        genes = set(gene.symbol for gene, *_ in annotation['outer_overlap_genes'])
+        genes = set(gene.symbol for gene, *
+                    _ in annotation['outer_overlap_genes'])
         l, m = 0, 0
         for record, overlap, coverage in chain(
                 annotation['dgv_gain_records'], annotation['gnomad_dup_records']
@@ -333,11 +342,17 @@ class AnnotateHelper:
         :return: 证据项、得分和致病性
         """
         # 获取所有证据项得分
-        rules = {
-            rule: settings.DEFAULT_SCORE[func][rule] for rule, check in rules.items() if check
-        }
+        # rules = {
+        #     rule: settings.DEFAULT_SCORE[func][rule] for rule, check in rules.items() if check
+        # }
+        rules_value = {}
+        for rule, check in rules.items():
+            if check in PVS1.values():
+                rules_value['pvs1'] = settings.DEFAULT_SCORE[func][check]
+            elif check:
+                rules_value[rule] = settings.DEFAULT_SCORE[func][rule]
         # 整合所有证据项得分
-        score = sum(AnnotateHelper.merge_score(func, **rules))
+        score = sum(AnnotateHelper.merge_score(func, **rules_value))
         # 判断致病性
         for op, cutoff, level in PATHOGENICITY_LEVELS[:-1]:
             if op(score, cutoff):
@@ -345,7 +360,7 @@ class AnnotateHelper:
                 break
         else:
             pathogenicity = PATHOGENICITY_LEVELS[-1][2]
-        return rules, score, pathogenicity
+        return rules_value, score, pathogenicity
 
     def annotate(self, chromosome, start, end, func, error=0):
         """
@@ -456,23 +471,25 @@ class AnnotateHelper:
             annotation = self._annotate_gain(**annotation)
         else:
             raise ValueError('Unknown func `{}`'.format(func))
-        
+
         annotation['rules'], annotation['score'], annotation['pathogenicity'] = self.judge(
             func, **annotation['rules']
         )
         # PVS1
         if func == 'del' and '2E' in annotation['rules'].keys():
-            annotation['rules']['2E'] = annotation['rules'].get('PVS1')
+            annotation['rules']['2E'] = annotation['rules'].get('pvs1')
         elif func == 'dup' and '2I' in annotation['rules'].keys():
-            annotation['rules']['2I'] = annotation['rules'].get('PVS1')
-        annotation['pvs1'] = annotation['rules'].pop('PVS1', None)
+            annotation['rules']['2I'] = annotation['rules'].get('pvs1')
+        annotation['pvs1'] = annotation['rules'].pop('pvs1', None)
 
         return annotation
 
     def _serializer(self, anno_result):
         seri = {}
-        seri['inner_gene'] = ','.join(x[0].symbol for x in anno_result['inner_overlap_genes'])
-        seri['inner_omim_gene'] = ','.join(x[0].symbol for x in anno_result['overlap_omim_genes'])
+        seri['inner_gene'] = ','.join(
+            x[0].symbol for x in anno_result['inner_overlap_genes'])
+        seri['inner_omim_gene'] = ','.join(
+            x[0].symbol for x in anno_result['overlap_omim_genes'])
         seri['HI_gene'] = ','.join(
             f'{x[0].symbol}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_hi_genes'])
         seri['HI_region'] = SEP.join(
