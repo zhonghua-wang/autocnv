@@ -506,11 +506,11 @@ class AnnotateHelper:
         seri['benign_hi_gene'] = ','.join(
             f'{x[0].symbol}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_uhi_genes'])
         seri['benign_hi_region'] = ','.join(
-            f'{x[0].symbol}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_uhi_regions'])
+            f'{x[0].name}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_uhi_regions'])
         seri['benign_ts_gene'] = ','.join(
             f'{x[0].symbol}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_uts_genes'])
         seri['benign_ts_region'] = ','.join(
-            f'{x[0].symbol}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_uts_regions'])
+            f'{x[0].name}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_uts_regions'])
         seri['auto_score'] = anno_result['score']
         seri['auto_pathogenicity'] = anno_result['pathogenicity']
         seri['pvs1'] = anno_result['pvs1']
