@@ -25,8 +25,7 @@ DEFAULT_SCORE = {
 
 
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# BASE_DIR = '/Users/zhonghua/workspace/python-space/acit/'
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 GENE_DATABASE = os.path.join(BASE_DIR, 'data', 'gene.sorted.bed.gz')
 
@@ -68,10 +67,9 @@ GNOMAD_DEL_DATABASE = os.path.join(BASE_DIR, 'data', 'gnomad-del.sorted.bed.gz')
 
 GNOMAD_DUP_DATABASE = os.path.join(BASE_DIR, 'data', 'gnomad-dup.sorted.bed.gz')
 
-try:
-    from local_settings import *
-except ImportError:
-    pass
+CNV_SYNDROME_DEL_DATABASE = os.path.join(BASE_DIR, 'data', 'cnv-syndrome-del.bed.gz')
+CNV_SYNDROME_DUP_DATABASE = os.path.join(BASE_DIR, 'data', 'cnv-syndrome-dup.bed.gz')
+
 
 try:
     from autocnv.local_settings import *

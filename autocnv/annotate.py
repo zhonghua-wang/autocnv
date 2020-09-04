@@ -56,6 +56,8 @@ class AnnotateHelper:
         self._dgv_loss_database = DataBase(settings.DGV_LOSS_DATABASE)
         self._gnomad_del_database = DataBase(settings.GNOMAD_DEL_DATABASE)
         self._gnomad_dup_database = DataBase(settings.GNOMAD_DUP_DATABASE)
+        self._cnv_syndrome_del_database = DataBase(settings.CNV_SYNDROME_DEL_DATABASE)
+        self._cnv_syndrome_dup_database = DataBase(settings.CNV_SYNDROME_DUP_DATABASE)
 
     @staticmethod
     def _norm_chrom(ch):
@@ -465,6 +467,13 @@ class AnnotateHelper:
             chromosome, annotation['outer_start'], annotation['outer_end']
         ))
 
+        annotation['cnv_syndrome_loss'] = list(self._cnv_syndrome_del_database.overlap(
+            chromosome, annotation['outer_start'], annotation['outer_end']
+        ))
+        annotation['cnv_syndrome_gain'] = list(self._cnv_syndrome_dup_database.overlap(
+            chromosome, annotation['outer_start'], annotation['outer_end']
+        ))
+
         if func == 'del':
             annotation = self._annotate_loss(**annotation)
         elif func == 'dup':
@@ -522,6 +531,12 @@ class AnnotateHelper:
         )
         seri['gnomad_gain_records'] = ','.join(
             f'{x[0].genes}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['gnomad_dup_records']
+        )
+        seri['cnv_syndrome_gain'] = ','.join(
+            f'{x[0].disease_name}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['cnv_syndrome_gain']
+        )
+        seri['cnv_syndrome_loss'] = ','.join(
+            f'{x[0].disease_name}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['cnv_syndrome_loss']
         )
         seri['auto_score'] = anno_result['score']
         seri['auto_pathogenicity'] = anno_result['pathogenicity']
