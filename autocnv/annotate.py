@@ -521,16 +521,16 @@ class AnnotateHelper:
         seri['benign_ts_region'] = ','.join(
             f'{x[0].name}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_uts_regions'])
         seri['dgv_loss_records'] = ','.join(
-            f'{x[0].id}(af: {x[0].af})({x[1]:.2%};{x[2]:.2%})' for x in anno_result['dgv_loss_records']
+            f'{x[0].id}(af: {float(x[0].af):.2e})({x[1]:.2%};{x[2]:.2%})' for x in anno_result['dgv_loss_records']
         )
         seri['dgv_gain_records'] = ','.join(
-            f'{x[0].id}(af: {x[0].af})({x[1]:.2%};{x[2]:.2%})' for x in anno_result['dgv_gain_records']
+            f'{x[0].id}(af: {float(x[0].af):.2e})({x[1]:.2%};{x[2]:.2%})' for x in anno_result['dgv_gain_records']
         )
         seri['gnomad_loss_records'] = ','.join(
-            f'{x[0].name}(af: {x[0].af})({x[1]:.2%};{x[2]:.2%})' for x in anno_result['gnomad_del_records']
+            f'{x[0].chrom}:{x[0].start}-{x[0].end}(af: {float(x[0].af):.2e})({x[1]:.2%};{x[2]:.2%})' for x in anno_result['gnomad_del_records']
         )
         seri['gnomad_gain_records'] = ','.join(
-            f'{x[0].name}(af: {x[0].af})({x[1]:.2%};{x[2]:.2%})' for x in anno_result['gnomad_dup_records']
+            f'{x[0].chrom}:{x[0].start}-{x[0].end}(af: {float(x[0].af):.2e})({x[1]:.2%};{x[2]:.2%})' for x in anno_result['gnomad_dup_records']
         )
         seri['cnv_syndrome_gain'] = ','.join(
             f'{x[0].disease_name}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['cnv_syndrome_gain']
