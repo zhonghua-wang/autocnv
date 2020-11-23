@@ -549,7 +549,7 @@ class AnnotateHelper:
         return seri.append(
             pd.Series(self._serializer(anno_result)).replace('', '-').fillna(DEFAULT_EMPTY_VALUE))
 
-    def annotation_file(self, file_path, result_path):
+    def annotation_file(self, file_path, result_path, col_map=None, cnv_map=None):
         """
         annotate specified file, required columns: chr, start, end, type, error
         :param file_path: input file (TSV)
@@ -561,6 +561,12 @@ class AnnotateHelper:
             input_df = pd.read_excel(file_path)
         else:
             input_df = pd.read_csv(file_path, sep='\t')
+        if col_map is not None:
+            input_df.rename(columns=col_map, inplace=True)
+        if cnv_map is not None:
+            input_df['type'] = input_df['type'].map(lambda x: cnv_map.get(x, x))
+        if 'error' not in input_df.columns:
+            input_df['error'] = 0
         input_df['chr'] = input_df['chr'].map(self._norm_chrom)
         try:
             from tqdm import tqdm
