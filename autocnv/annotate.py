@@ -522,16 +522,16 @@ class AnnotateHelper:
         seri['benign_ts_region'] = ','.join(
             f'{x[0].name}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_uts_regions'])
         seri['dgv_loss_records'] = ','.join(
-            f'{x[0].genes}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['dgv_loss_records']
+            f'{x[0].id}(af: {float(x[0].af):.2e})({x[1]:.2%};{x[2]:.2%})' for x in anno_result['dgv_loss_records']
         )
         seri['dgv_gain_records'] = ','.join(
-            f'{x[0].genes}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['dgv_gain_records']
+            f'{x[0].id}(af: {float(x[0].af):.2e})({x[1]:.2%};{x[2]:.2%})' for x in anno_result['dgv_gain_records']
         )
         seri['gnomad_loss_records'] = ','.join(
-            f'{x[0].genes}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['gnomad_del_records']
+            f'{x[0].chrom}:{x[0].start}-{x[0].end}(af: {float(x[0].af):.2e})({x[1]:.2%};{x[2]:.2%})' for x in anno_result['gnomad_del_records']
         )
         seri['gnomad_gain_records'] = ','.join(
-            f'{x[0].genes}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['gnomad_dup_records']
+            f'{x[0].chrom}:{x[0].start}-{x[0].end}(af: {float(x[0].af):.2e})({x[1]:.2%};{x[2]:.2%})' for x in anno_result['gnomad_dup_records']
         )
         seri['cnv_syndrome_gain'] = ','.join(
             f'{x[0].disease_name}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['cnv_syndrome_gain']
@@ -549,7 +549,7 @@ class AnnotateHelper:
         return seri.append(
             pd.Series(self._serializer(anno_result)).replace('', '-').fillna(DEFAULT_EMPTY_VALUE))
 
-    def annotation_file(self, file_path, result_path):
+    def annotation_file(self, file_path, result_path, col_map=None, cnv_map=None):
         """
         annotate specified file, required columns: chr, start, end, type, error
         :param file_path: input file (TSV)
@@ -561,6 +561,12 @@ class AnnotateHelper:
             input_df = pd.read_excel(file_path)
         else:
             input_df = pd.read_csv(file_path, sep='\t')
+        if col_map is not None:
+            input_df.rename(columns=col_map, inplace=True)
+        if cnv_map is not None:
+            input_df['type'] = input_df['type'].map(lambda x: cnv_map.get(x, x))
+        if 'error' not in input_df.columns:
+            input_df['error'] = 0
         input_df['chr'] = input_df['chr'].map(self._norm_chrom)
         try:
             from tqdm import tqdm
