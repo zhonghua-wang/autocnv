@@ -12,6 +12,7 @@ import pandas as pd
 
 SEP = '\n'
 DEFAULT_EMPTY_VALUE = '-'
+NAME_MAP = {'chr': 'chromosome', 'type': 'func'}
 
 PVS1 = {
     Strength.VeryStrong: 'PVS1', Strength.Strong: 'PVS1_S', Strength.Moderate: 'PVS1_M',
@@ -364,7 +365,7 @@ class AnnotateHelper:
             pathogenicity = PATHOGENICITY_LEVELS[-1][2]
         return rules_value, score, pathogenicity
 
-    def annotate(self, chromosome, start, end, func, error=0):
+    def annotate(self, chromosome, start, end, func, error=0, **kwargs):
         """
         对给定CNV进行注释
         :param chromosome: 染色体编号
@@ -544,8 +545,7 @@ class AnnotateHelper:
         return seri
 
     def _seri_anno(self, seri: pd.Series) -> pd.Series:
-        anno_result = self.annotate(seri['chr'], seri['start'], seri['end'], seri['type'],
-                                    seri['error'])
+        anno_result = self.annotate(**seri.rename(NAME_MAP).to_dict())
         return seri.append(
             pd.Series(self._serializer(anno_result)).replace('', '-').fillna(DEFAULT_EMPTY_VALUE))
 
