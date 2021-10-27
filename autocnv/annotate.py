@@ -375,6 +375,7 @@ class AnnotateHelper:
         :param error: 误差值
         :return: 注释结果
         """
+        chromosome = self._norm_chrom(chromosome)
         annotation = dict(
             chromosome=chromosome, start=start, end=end,
             length=end - start, error=error,

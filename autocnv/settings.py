@@ -27,6 +27,8 @@ DEFAULT_SCORE = {
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+GENE_EXON_DATABASE = os.path.join(BASE_DIR, 'data', 'exon.sorted.bed.gz')
+
 GENE_DATABASE = os.path.join(BASE_DIR, 'data', 'gene.sorted.bed.gz')
 
 OMIM_GENE_DATABASE = os.path.join(BASE_DIR, 'data', 'omim-gene.sorted.bed.gz')

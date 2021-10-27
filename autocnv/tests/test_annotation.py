@@ -101,6 +101,9 @@ def test_4O():
     annotation = annotate.annotate('chr1', 425, 69091, 'dup')
     assert '4O' not in annotation['rules']
 
+def test_syndrome():
+    annotation = annotate.annotate('chr23', 6420555, 8153336, 'del')
+
 
 def test_random():
     annotation = annotate.annotate('chr11', 45904399, 46480747, 'del')
