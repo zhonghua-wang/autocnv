@@ -27,6 +27,8 @@ DEFAULT_SCORE = {
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+CYTO_BAND_FILE = os.path.join(BASE_DIR, 'data', 'cyto-band.bed.gz')
+
 GENE_EXON_DATABASE = os.path.join(BASE_DIR, 'data', 'exon.sorted.bed.gz')
 
 GENE_DATABASE = os.path.join(BASE_DIR, 'data', 'gene.sorted.bed.gz')

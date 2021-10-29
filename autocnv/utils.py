@@ -2,7 +2,7 @@
 from pysam import VariantRecord
 from json import JSONEncoder
 from autopvs1.strength import Strength
-
+from autocnv import settings
 
 class ACITEncoder(JSONEncoder):
     def default(self, o):

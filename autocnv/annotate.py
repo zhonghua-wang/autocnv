@@ -1,3 +1,5 @@
+import re
+
 from autocnv.database import DataBase
 from pysam import VariantFile
 from autocnv import settings
@@ -59,6 +61,14 @@ class AnnotateHelper:
         self._gnomad_dup_database = DataBase(settings.GNOMAD_DUP_DATABASE)
         self._cnv_syndrome_del_database = DataBase(settings.CNV_SYNDROME_DEL_DATABASE)
         self._cnv_syndrome_dup_database = DataBase(settings.CNV_SYNDROME_DUP_DATABASE)
+        self._cytoband_database = DataBase(settings.CYTO_BAND_FILE)
+        self._exon_database = DataBase(settings.GENE_EXON_DATABASE)
+
+        self.serializer = self._serializer # func compatible
+
+    @staticmethod
+    def _chrom_num(chrom):
+        return re.sub('chr', '', str(chrom), flags=re.I)
 
     @staticmethod
     def _norm_chrom(ch):
@@ -68,10 +78,10 @@ class AnnotateHelper:
         :return: normalized name
         >>> norm_chrom(2)
         'chr2'
-        >>> norm_chrom('chr23')
+        >>> norm_chrom('Chr23')
         'chrX'
         """
-        ch = str(ch).replace('chr', '')
+        ch = AnnotateHelper._chrom_num(ch)
         if ch == '23':
             return 'chrX'
         if ch == '24':
@@ -140,8 +150,11 @@ class AnnotateHelper:
                 tx = get_transcript(gene.transcript, transcripts)
                 pvs1 = PVS1CNV(cnv, None, tx)
                 loss['2E'] = True
-                #loss[PVS1[pvs1.verify_DEL()[0]]] = True
-                loss['pvs1'] = PVS1[pvs1.verify_DEL()[0]]
+                # loss[PVS1[pvs1.verify_DEL()[0]]] = True
+                try:  # HOTFIX: pvs1 error
+                    loss['pvs1'] = PVS1[pvs1.verify_DEL()[0]]
+                except:
+                    print(cnv)
 
         # 包含预测HI基因
         if len(annotation['overlap_hi_genes']) + len(annotation['overlap_hi_regions']) == 0 \
@@ -155,7 +168,7 @@ class AnnotateHelper:
 
         # 落入uhi区域
         genes = set(gene.symbol for gene, *
-                    _ in annotation['outer_overlap_genes'])
+        _ in annotation['outer_overlap_genes'])
         for region, overlap, coverage in annotation['overlap_uhi_regions']:
             if len(genes - set(region.genes.split(','))) > 0:
                 loss['2G'] = True
@@ -177,13 +190,13 @@ class AnnotateHelper:
 
         # DGV金标和Gnomad
         genes = set(gene.symbol for gene, *
-                    _ in annotation['outer_overlap_genes'])
+        _ in annotation['outer_overlap_genes'])
         l, m = 0, 0
         for record, overlap, coverage in chain(
                 annotation['dgv_loss_records'], annotation['gnomad_del_records']
         ):
             if overlap == 1 and any(
-                float(v) >= 0.01 for f, v in record._asdict().items() if f.startswith('af')
+                    float(v) >= 0.01 for f, v in record._asdict().items() if f.startswith('af')
             ):  # 完全覆盖待解读CNV且频率大于1%
                 loss['4O'] = True
                 break
@@ -241,7 +254,7 @@ class AnnotateHelper:
         # 落入uts区域
         for region, overlap, coverage in annotation['overlap_uts_regions']:
             genes = set(gene.symbol for gene, *
-                        _ in annotation['inner_overlap_genes'])
+            _ in annotation['inner_overlap_genes'])
             region_genes = set(region.genes.split(','))
             if overlap == coverage == 1:  # 与良性区域完全一致
                 gain['2C'] = True
@@ -293,7 +306,7 @@ class AnnotateHelper:
 
         # DGV金标和Gnomad
         genes = set(gene.symbol for gene, *
-                    _ in annotation['outer_overlap_genes'])
+        _ in annotation['outer_overlap_genes'])
         l, m = 0, 0
         for record, overlap, coverage in chain(
                 annotation['dgv_gain_records'], annotation['gnomad_dup_records']
@@ -476,6 +489,16 @@ class AnnotateHelper:
             chromosome, annotation['outer_start'], annotation['outer_end']
         ))
 
+        annotation['cyto_band'] = list(self._cytoband_database.overlap(
+            chromosome, annotation['outer_start'], annotation['outer_end']
+        ))
+
+        annotation['exon'] = list(
+            self._exon_database.overlap(
+                chromosome, annotation['outer_start'], annotation['outer_end']
+            )
+        )
+
         if func == 'del':
             annotation = self._annotate_loss(**annotation)
         elif func == 'dup':
@@ -491,16 +514,34 @@ class AnnotateHelper:
             annotation['rules']['2E'] = annotation['rules'].get('pvs1')
         elif func == 'dup' and '2I' in annotation['rules'].keys():
             annotation['rules']['2I'] = annotation['rules'].get('pvs1')
-        annotation['pvs1'] = annotation['rules'].pop('pvs1', None)
+        annotation['pvs1'] = annotation['rules'].pop('pvs1', DEFAULT_EMPTY_VALUE)
 
         return annotation
 
     def _serializer(self, anno_result):
         seri = {}
+        cyto_band_li = [x[0].name for x in anno_result['cyto_band']]
+        if len(cyto_band_li) == 0:
+            cyto_str = DEFAULT_EMPTY_VALUE
+        elif len(cyto_band_li) == 1:
+            cyto_str = f'{AnnotateHelper._chrom_num(anno_result["chromosome"])}{cyto_band_li[0]}'
+        else:
+            cyto_str = f'{AnnotateHelper._chrom_num(anno_result["chromosome"])}{cyto_band_li[0]}{cyto_band_li[-1]}'
+
+        seri['cyto_band'] = cyto_str
+
         seri['inner_gene'] = ','.join(
             x[0].symbol for x in anno_result['inner_overlap_genes'])
         seri['inner_omim_gene'] = ','.join(
             x[0].symbol for x in anno_result['overlap_omim_genes'])
+        if len(anno_result['exon']) == 0:
+            seri['exon'] = DEFAULT_EMPTY_VALUE
+        elif len(anno_result) == 1:
+            seri['exon'] = f"{anno_result['exon'][0][0].symbol}_EX{anno_result['exon'][0][0].exon_number}"
+        else:
+            seri['exon'] = f"{anno_result['exon'][0][0].symbol}_EX{anno_result['exon'][0][0].exon_number}" \
+                           f"-{anno_result['exon'][-1][0].symbol}_EX{anno_result['exon'][-1][0].exon_number}"
+
         seri['HI_gene'] = ','.join(
             f'{x[0].symbol}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['overlap_hi_genes'])
         seri['HI_region'] = SEP.join(
@@ -529,10 +570,12 @@ class AnnotateHelper:
             f'{x[0].id}(af: {float(x[0].af):.2e})({x[1]:.2%};{x[2]:.2%})' for x in anno_result['dgv_gain_records']
         )
         seri['gnomad_loss_records'] = ','.join(
-            f'{x[0].chrom}:{x[0].start}-{x[0].end}(af: {float(x[0].af):.2e})({x[1]:.2%};{x[2]:.2%})' for x in anno_result['gnomad_del_records']
+            f'{x[0].chrom}:{x[0].start}-{x[0].end}(af: {float(x[0].af):.2e})({x[1]:.2%};{x[2]:.2%})' for x in
+            anno_result['gnomad_del_records']
         )
         seri['gnomad_gain_records'] = ','.join(
-            f'{x[0].chrom}:{x[0].start}-{x[0].end}(af: {float(x[0].af):.2e})({x[1]:.2%};{x[2]:.2%})' for x in anno_result['gnomad_dup_records']
+            f'{x[0].chrom}:{x[0].start}-{x[0].end}(af: {float(x[0].af):.2e})({x[1]:.2%};{x[2]:.2%})' for x in
+            anno_result['gnomad_dup_records']
         )
         seri['cnv_syndrome_gain'] = ','.join(
             f'{x[0].disease_name}({x[1]:.2%};{x[2]:.2%})' for x in anno_result['cnv_syndrome_gain']

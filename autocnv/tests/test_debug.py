@@ -13,4 +13,6 @@ anno = AnnotateHelper()
 # df.apply(anno._seri_anno, axis=1)
 
 annotation = anno.annotate('chrX', 6420555, 8153336, 'del')
+d = anno.serializer(annotation)
+print(d)
 
