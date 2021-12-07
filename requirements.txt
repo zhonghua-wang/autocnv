@@ -1,2 +1,4 @@
-pandas
+pandas~=1.2.5
 pyfaidx
+pysam~=0.16.0.1
+gtfparse~=1.2.1
