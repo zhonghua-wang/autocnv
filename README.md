@@ -11,8 +11,13 @@
   conda config --add channels bioconda
   conda install pysam
   ```
+  For detail install instruction of `pysam`, please refer to [the official document](https://pysam.readthedocs.io/en/latest/installation.html).
 
-For detail install instruction of `pysam`, please refer to [the official document](https://pysam.readthedocs.io/en/latest/installation.html).
+- install [`autopvs1`](https://github.com/JiguangPeng/autopvs1)
+- install requirments `pip install -r requirements.txt`
+
+### Usage
+please refer to the test cases.
 
 ### Citation
 
